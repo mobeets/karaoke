@@ -7,7 +7,7 @@ let spectrumBins = 1024; // 2^k for k between 4 and 10
 let nFramesPerStep = 30;
 let fr = 30; // frame rate (fps)
 let firstMidiNote = 60; // 60 middle C
-let nMidiNotes = 20;
+let nMidiNotes = 24;
 let octaveBands;
 let freqs; // Hz
 let frameStart;
@@ -43,7 +43,8 @@ function setup() {
    // for logging fft data per note
    data = [];
    userInputs = [];
-   octaveBands = fft.getOctaveBands(12);
+   octaveBands = fft.getOctaveBands(12, 16.3516);
+   // n.b. 16.3515 chosen so the centers of the bands match the frequencies of midi notes
 }
 
 function playOscillator() {
@@ -64,7 +65,7 @@ function stopOscillator() {
    playing = false;
 }
 
-function mouseClicked() {
+function togglePlaying() {
    if (!playing) {
       playOscillator();
    }
@@ -110,6 +111,17 @@ function draw() {
 
    // update synth frequency and amplitude
    updateSynth();
+}
+
+function downloadData() {
+   let content = JSON.stringify(data, null, 2);
+   let fileName = 'data.json';
+   let contentType = 'text/plain';
+   var a = document.createElement("a");
+   var file = new Blob([content], {type: contentType});
+   a.href = URL.createObjectURL(file);
+   a.download = fileName;
+   a.click();
 }
 
 function logData() {
