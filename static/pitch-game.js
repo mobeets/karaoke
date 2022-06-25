@@ -23,17 +23,7 @@ var source, fft, lowPass;
 let centerClipThreshold = 0.0;
 let varThreshold = 0.0;
 
-const notes = {
-  do2: '130.81',
-  re2: '146.83',
-  mi2: '164.81',
-  fa2: '174.61',
-  sol2: '196',
-  la2: '220',
-  si2: '246.94',
-  do3: '261.63',
-  re3: '293.66'
-}
+let baseFrequency = 440; // Hz (440 = middle A)
 var lineNotes = [];
 let pitchHistory = [];
 let pitchConfidenceHistory = [];
@@ -41,7 +31,7 @@ let pitchConfidenceHistory = [];
 const opts = {
   stepX: 2,
   lowFreq: 100,
-  highFreq: 500,
+  highFreq: 1000,
   freqThresh: 5, // to make lines wiggle
   preNormalize: true, // normalize pre autocorrelation
   postNormalize: true, // normalize post autocorrelation
@@ -67,7 +57,7 @@ function setup() {
   fft.setInput(lowPass);
 
   initPitchHistory(width / 2);
-  initLineNotes(notes);
+  initLineNotes();
 }
 
 function draw() {
@@ -84,8 +74,8 @@ function draw() {
   text('Fundamental Frequency: ' + freq.toFixed(2), 20, 50);
 
   let currentFreq = map(freq.toFixed(2), opts.lowFreq, opts.highFreq, height, 0);
-  drawPitchHistory(pitchHistory, currentFreq);
-  updateLineNotes();
+  let showCurrentFreq = drawPitchHistory(pitchHistory, currentFreq);
+  updateLineNotes(showCurrentFreq);
 }
 
 function drawPitchHistory(pitchHistory, currentFreq) {
@@ -93,9 +83,10 @@ function drawPitchHistory(pitchHistory, currentFreq) {
   noFill();
   strokeWeight(1);
   beginShape();
+  
   let runningMean = 0;
   let runningVar = 0;
-  varThreshold = Math.pow(map(mouseY, height, 0, 0, 30), 2);
+  varThreshold = Math.pow(map(mouseY, height, 0, 0, 40), 2);
   for (let i = 0; i < pitchHistory.length; i++) {
     if (pitchHistory[i] > 0) {
       runningMean = (1-opts.alphaSmoothing)*runningMean + opts.alphaSmoothing*pitchHistory[i];
@@ -115,6 +106,24 @@ function drawPitchHistory(pitchHistory, currentFreq) {
   runningVar = (1-opts.alphaSmoothingVar)*runningVar + opts.alphaSmoothingVar*Math.pow(currentFreq - runningMean,2);
   pitchConfidenceHistory[pitchHistory.length - 1] = runningVar;
   endShape();
+
+  let showCurrentFreq = true;
+  if ((runningVar > varThreshold) || (currentFreq <= 0)) {
+    showCurrentFreq = false;
+  }
+  return showCurrentFreq;
+}
+
+function updateLineNotes(showCurrentFreq) {
+  // Line Notes
+  for (let line of lineNotes) {    
+    line.draw();
+    if (showCurrentFreq && line.isFocus(freq, opts.freqThresh)) {
+      line.setOn();
+    } else {
+      line.setOff();
+    }
+  }
 }
 
 function initPitchHistory(stageWidth) {
@@ -124,23 +133,13 @@ function initPitchHistory(stageWidth) {
   }
 }
 
-function initLineNotes(notes) {
-  for (let [key, value] of Object.entries(notes)) {
-    let freq = map(value, opts.lowFreq, opts.highFreq, height, 0);
-    lineNotes.push(new LineNote(value, key, freq));
-  }
-}
-
-function updateLineNotes() {
-  // Line Notes
-  for (let line of lineNotes) {    
-    line.draw();
-    if (line.isFocus(freq, opts.freqThresh) ) {
-     // modif sur la ligne 
-      line.setOn();
-    } else {
-      line.setOff();
-    }
+function initLineNotes() {
+  let noteNames = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#','G', 'G#'];
+  for (var i = -24; i < 24; i++) {
+    let curFrequency = baseFrequency * Math.pow(2, i/12);
+    let freq = constrain(map(curFrequency, opts.lowFreq, opts.highFreq, height, 0), 0, height);
+    let key = noteNames[((i + 24) % noteNames.length)];
+    lineNotes.push(new LineNote(curFrequency, key, freq));
   }
 }
 
