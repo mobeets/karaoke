@@ -19,9 +19,10 @@
 
 var source, fft, lowPass;
 
-// center clip nullifies samples below a clip amount
-let centerClipThreshold = 0.0;
+let showCurrentFreq = true;
+let centerClipThreshold = 0.0; // nullifies samples below a clip amount
 let varThreshold = 0.0;
+let freq = 0;
 
 let baseFrequency = 440; // Hz (440 = middle A)
 var lineNotes = [];
@@ -29,7 +30,7 @@ let pitchHistory = [];
 let pitchConfidenceHistory = [];
 
 const opts = {
-  stepX: 2,
+  stepX: 1,
   lowFreq: 100,
   highFreq: 1000,
   freqThresh: 5, // to make lines wiggle
@@ -40,7 +41,36 @@ const opts = {
   alphaSmoothingVar: 0.8, // alpha for exponential smoothing of frequency
 }
 
-let freq = 0;
+// TODO: load JSON
+let songState = 'stop';
+let songCurrentTime = 0;
+let notesObj = [];
+const songNotes = {
+  name: 'Bowie',
+  notes: [
+    {
+      id:    60,
+      time:  50
+    },
+    {
+      id:    62,
+      time:  80
+    },
+    {
+      id:    62,
+      time:  160
+    },
+    {
+      id:    66,
+      time:  200
+    },
+    {
+      id:    68,
+      time:  260
+    },
+  
+  ]
+};
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -61,27 +91,59 @@ function setup() {
 }
 
 function draw() {
-  background(200);
+  background('#383636');
 
   // array of values from -1 to 1
   var timeDomain = fft.waveform(1024, 'float32');
   var corrBuff = autoCorrelate(timeDomain);
 
   freq = constrain(findFrequency(corrBuff), 0, 5*opts.highFreq);
-  fill('black');
+  noStroke();
+  fill('white');
   text('Center Clip: ' + centerClipThreshold.toFixed(2), 20, 20);
-  text('Variance threshold: ' + varThreshold.toFixed(2), 20, 35);
-  text('Fundamental Frequency: ' + freq.toFixed(2), 20, 50);
+  text('Variance threshold: ' + varThreshold.toFixed(1), 20, 35);
+  text('Fundamental Frequency: ' + freq.toFixed(1), 20, 50);
 
-  let currentFreq = map(freq.toFixed(2), opts.lowFreq, opts.highFreq, height, 0);
-  let showCurrentFreq = drawPitchHistory(pitchHistory, currentFreq);
-  updateLineNotes(showCurrentFreq);
+  // staff
+  drawMusicStaff(showCurrentFreq);
+
+  // song notes
+  if (songState.localeCompare("play") == 0) {
+    drawSongNotes();    
+  }
+
+  let freqPos = freqToHeight(freq);
+  showCurrentFreq = drawPitchHistory(pitchHistory, freqPos);
 }
 
-function drawPitchHistory(pitchHistory, currentFreq) {
-  stroke('red');
+function freqToHeight(freq) {
+  return map(freq.toFixed(2), opts.lowFreq, opts.highFreq, height, 0);
+}
+
+function drawSongNotes() { 
+  let n = songNotes.notes;
+  let index = 0;
+  
+  songCurrentTime += opts.stepX;
+  for (let note of n) {
+    if (songCurrentTime == note.time) {
+      let id = note.id;
+      let freq = midiToFreq(id);
+      let posY = freqToHeight(freq);
+      let pos = createVector(width, posY);
+      notesObj.push(new Note(freq, pos));
+    } else if (songCurrentTime > note.time) {
+        notesObj[index].update();
+        notesObj[index].draw();                 
+    }
+    index++;
+  }
+}
+
+function drawPitchHistory(pitchHistory, freqPos) {
+  stroke('#ff6969');
   noFill();
-  strokeWeight(1);
+  strokeWeight(2);
   beginShape();
   
   let runningMean = 0;
@@ -102,19 +164,19 @@ function drawPitchHistory(pitchHistory, currentFreq) {
       pitchConfidenceHistory[i - 1] = pitchConfidenceHistory[i];
     }
   }
-  pitchHistory[pitchHistory.length - 1] = currentFreq;
-  runningVar = (1-opts.alphaSmoothingVar)*runningVar + opts.alphaSmoothingVar*Math.pow(currentFreq - runningMean,2);
+  pitchHistory[pitchHistory.length - 1] = freqPos;
+  runningVar = (1-opts.alphaSmoothingVar)*runningVar + opts.alphaSmoothingVar*Math.pow(freqPos - runningMean,2);
   pitchConfidenceHistory[pitchHistory.length - 1] = runningVar;
   endShape();
 
   let showCurrentFreq = true;
-  if ((runningVar > varThreshold) || (currentFreq <= 0)) {
+  if ((runningVar > varThreshold) || (freqPos <= 0)) {
     showCurrentFreq = false;
   }
   return showCurrentFreq;
 }
 
-function updateLineNotes(showCurrentFreq) {
+function drawMusicStaff(showCurrentFreq) {
   // Line Notes
   for (let line of lineNotes) {    
     line.draw();
@@ -140,6 +202,17 @@ function initLineNotes() {
     let freq = constrain(map(curFrequency, opts.lowFreq, opts.highFreq, height, 0), 0, height);
     let key = noteNames[((i + 24) % noteNames.length)];
     lineNotes.push(new LineNote(curFrequency, key, freq));
+  }
+}
+
+function mouseClicked() {
+  if (songState.localeCompare("notready") == 0) { return; }
+  if (songState.localeCompare("play") == 0) {
+    songState = "stop";
+    notesObj = [];
+    songCurrentTime = 0;
+  } else {
+    songState = "play";
   }
 }
 

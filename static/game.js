@@ -10,10 +10,10 @@ const opts = {
   highFreq: 300,
   freqThresh: 5, // to make lines wiggle
 }
+
 let state = 'notready';
 let songCurrentTime = 0;
 let notesObj = [];
-
 const notes = {
   do2: '130.81',
   re2: '146.83',

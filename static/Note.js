@@ -8,6 +8,7 @@ class Note {
     this.name = name;
     this.velocity = createVector(-1, 0);
     this.position = createVector(pos.x, pos.y);   
+    this.diameter = 5;
    }
 
   update() {
@@ -15,7 +16,7 @@ class Note {
   }
   draw() {
     noStroke();
-    fill(255);
-    ellipse(this.position.x, this.position.y, 25, 25);    
+    fill('white');
+    ellipse(this.position.x, this.position.y, this.diameter, this.diameter);    
   }
 }

@@ -49,7 +49,7 @@ class LineNote {
     
     if (this.isOn) {
       noStroke();
-      fill('black');
+      fill('white');
       text(this.name, width/2, this.posY);
     }
   }
