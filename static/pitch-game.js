@@ -1,9 +1,3 @@
-// NOTES:
-// - should be able to see the whole piece at once; more like a piece of music
-// - the notes of the song are thus fixed, and it's your voice that's moving through it
-// - as you pass, there is some sort of trace of what note you sang at that point. a visual error.
-// - at the end of the song, the notes are then scored as bad/fair/great or something, and get colored red/yellow/green to indicate this
-
 // pitch detection from code via Jason Sigal and Golan Levin.
 
 let source, fft, lowPass;
@@ -27,24 +21,23 @@ const opts = {
   cursorColor: '#5751b0',
   cursorDiameter: 10, // radius of circle showing current pitch
   noteDiameter: 10, // radius of circle showing note
-  midiNoteScreenMin: 40, // lowest note in range of screen
-  midiNoteScreenMax: 80, // highest note in range of screen
-  midiNoteStaffMin: 50, // lowest note drawn on staff
-  midiNoteStaffMax: 70, // highest note drawn on staff
+  midiNoteScreenMin: 30, // lowest note in range of screen
+  midiNoteScreenMax: 70, // highest note in range of screen
+  midiNoteStaffMin: 40, // lowest note drawn on staff
+  midiNoteStaffMax: 64, // highest note drawn on staff
   centsThresh: 100, // to make lines wiggle
   preNormalize: true, // normalize pre autocorrelation
   postNormalize: true, // normalize post autocorrelation
   doCenterClip: false, // zero out any values below the centerClipThreshold
   alphaSmoothing: 0.8, // alpha for exponential smoothing of frequency
   alphaSmoothingVar: 0.8, // alpha for exponential smoothing of frequency
-  timeBuffer: 50, // buffer at end of song before scoring
+  timeBuffer: 100, // buffer at end of song before scoring
   framesToShowScore: 200, // number of frames to show score
   fontSizeNote: 12,
   fontSizeDefault: 12,
   fontSizeScore: 12,
-}
+};
 
-// todo: load JSON
 let songState = 'stop';
 let songStateOnPause;
 let songCurrentTime = 0;
@@ -52,9 +45,10 @@ let notesObj = [];
 let songNotes = {};
 let randomSongLength = 5;
 
+// todo: load JSON
 function makeRandomSong(nNotes) {
-  let firstTime = 20;
-  let timeSpacing = 20;
+  let firstTime = 1;
+  let timeSpacing = 40;
   let noteRange = (opts.midiNoteStaffMax - opts.midiNoteStaffMin);
   let songNotes = [];
   let randomWords = ['hi', 'i', 'love', 'your', 'body', 'so', 'what'];
@@ -97,7 +91,7 @@ function draw() {
     // array of values from -1 to 1
     var timeDomain = fft.waveform(1024, 'float32');
     var corrBuff = autoCorrelate(timeDomain);
-    freq = constrain(findFrequency(corrBuff), 0, 5*opts.midiNoteScreenMax);
+    freq = constrain(findFrequency(corrBuff), 0, midiToFreq(opts.midiNoteScreenMax));
   }
   noStroke();
   if (showStats) {
@@ -167,12 +161,21 @@ function drawSongNotes(showCurrentFreq, isPaused) {
 
 function checkIfSongEnded() {
   let maxSongTime = songNotes.notes[songNotes.notes.length-1].time;
+  if (songCurrentTime - width*opts.pitchHistoryProportion > maxSongTime) {
+    scoreSong();
+  }
   if (songCurrentTime - width*opts.pitchHistoryProportion > maxSongTime + opts.timeBuffer) {
-    endAndScoreSong();
+    endSong();
   }
 }
 
-function endAndScoreSong() {
+function endSong() {
+  songState = "play"; // restarts song
+  notesObj = [];
+  songCurrentTime = 0;
+}
+
+function scoreSong() {
   console.log('song ended');
 
   // get scores of all notes that have passed
@@ -201,10 +204,6 @@ function endAndScoreSong() {
     lastScore = { score: avgError, percentCorrect: 100*pctCorrect, notesHit: nNotesHit, notesMissed: notesObj.length-nNotesSung, notesTotal: notesObj.length};
     lastScoreTime = frameCount;
   }
-
-  songState = "play"; // restarts song
-  notesObj = [];
-  songCurrentTime = 0;
 }
 
 function showScore() {

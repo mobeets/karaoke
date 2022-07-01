@@ -34,11 +34,11 @@ class Note {
     let errorCents = 100*12*(Math.log(freq) - Math.log(this.freq));
     let errorFraction;
     if (Math.abs(errorCents) < centsThresh) {
-      this.color = "green";
+      this.color = "#73f06e";
       // errorFraction = constrain(Math.abs(errorCents)/centsThresh, 0, 1);
       // this.diameter = Math.sqrt(1-errorFraction)*this.defaultDiameter;
     } else {
-      this.color = "red";
+      this.color = "#cc2910";
       // errorFraction = constrain((Math.abs(errorCents)-centsThresh)/centsThresh, 0, 1);
       // this.diameter = Math.sqrt(errorFraction)*this.defaultDiameter;
     }
