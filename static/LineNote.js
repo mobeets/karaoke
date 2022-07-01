@@ -9,9 +9,11 @@ class LineNote {
     this.force = 0;
     this.isOn = false;
   }
-  isFocus(freq, freqThresh) {
-    let leftBin = this.freq * Math.pow(2, -1/24);
-    let rightBin = this.freq * Math.pow(2, 1/24);
+  isFocus(freq, centsThresh) {
+    // when centsThresh = 100, bins are maximal size without overlapping bins of adjacent notes in 12-TET
+    let binSize = min(1, centsThresh/100)*(1/24);
+    let leftBin = this.freq * Math.pow(2, -binSize);
+    let rightBin = this.freq * Math.pow(2, binSize);
     return (freq >= leftBin) && (freq < rightBin);
   }
   setOn() {
@@ -46,11 +48,5 @@ class LineNote {
     vertex(pA.x, pA.y);
     quadraticVertex(pB.x, pB.y, pC.x, pC.y);
     endShape();
-    
-    if (this.isOn) {
-      noStroke();
-      fill('white');
-      text(this.name, width/2, this.posY);
-    }
   }
 }
