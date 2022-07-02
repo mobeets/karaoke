@@ -35,7 +35,7 @@ class LineNote {
   }
   draw() {
     fill(255);
-    textSize(12);
+    textSize(14);
     stroke(this.color);
     strokeWeight(this.weight);
     noFill();

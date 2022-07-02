@@ -13,18 +13,22 @@ let viewStyle = 'chromatic';
 let showStats = false;
 let lastScore = { score: 0, percentCorrect: 0, notesHit: 0, notesMissed: 0, notesTotal: 0};
 let lastScoreTime = 0;
+let fr = 30; // frames per second (attempted)
+let songNoteTranspose = -12; // midi notes to add to every note
+let bpm = 120; // beats per minute
+let stepX = 1; // time steps per frame (frameRate / ticksPerSecond)
+let tickDivisor = 1; // for fitting in one tick per frame
 
 const opts = {
-  stepX: 1, // time steps per frame
   pitchHistoryProportion: 0.5, // proportion of screen
   pitchHistoryColor: '#9691e6',
   cursorColor: '#5751b0',
-  cursorDiameter: 10, // radius of circle showing current pitch
-  noteDiameter: 10, // radius of circle showing note
-  midiNoteScreenMin: 30, // lowest note in range of screen
+  cursorDiameter: 20, // radius of circle showing current pitch
+  noteDiameter: 20, // radius of circle showing note
+  midiNoteScreenMin: 45, // lowest note in range of screen
   midiNoteScreenMax: 70, // highest note in range of screen
-  midiNoteStaffMin: 40, // lowest note drawn on staff
-  midiNoteStaffMax: 64, // highest note drawn on staff
+  midiNoteStaffMin: 45, // lowest note drawn on staff
+  midiNoteStaffMax: 70, // highest note drawn on staff
   centsThresh: 100, // to make lines wiggle
   preNormalize: true, // normalize pre autocorrelation
   postNormalize: true, // normalize post autocorrelation
@@ -33,16 +37,16 @@ const opts = {
   alphaSmoothingVar: 0.8, // alpha for exponential smoothing of frequency
   timeBuffer: 100, // buffer at end of song before scoring
   framesToShowScore: 200, // number of frames to show score
-  fontSizeNote: 12,
-  fontSizeDefault: 12,
-  fontSizeScore: 12,
+  fontSizeNote: 14,
+  fontSizeDefault: 14,
+  fontSizeScore: 14,
 };
 
 let songState = 'stop';
 let songStateOnPause;
-let songCurrentTime = 0;
+let songCurrentTime = -1;
 let notesObj = [];
-let songNotes = {};
+let songData = {};
 let randomSongLength = 5;
 
 // todo: load JSON
@@ -56,17 +60,24 @@ function makeRandomSong(nNotes) {
     let randomMidiNote = +(opts.midiNoteStaffMin + noteRange*random()).toFixed(0);
     let randomWordIndex = +((randomWords.length-1)*random() - 0.5).toFixed(0);
     let curNote = {
-      id: randomMidiNote,
+      note: randomMidiNote,
       time: timeSpacing*i + firstTime,
       name: randomWords[randomWordIndex] };
     songNotes.push(curNote);
   }
-  return { name: "Random", notes: songNotes };
+  songData = { name: "Random", notes: songNotes };
+}
+
+function loadSong(songName) {
+  songData = letItBe;
+  let tps = songData.ticks_per_beat * (bpm/60); // ticks per second
+  tickDivisor = tps/fr; // ticks per frame
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noFill();
+  frameRate(fr);
 
   source = new p5.AudioIn();
   source.start();
@@ -78,7 +89,8 @@ function setup() {
   fft = new p5.FFT();
   fft.setInput(lowPass);
 
-  songNotes = makeRandomSong(randomSongLength);
+  // makeRandomSong(randomSongLength);
+  loadSong('let-it-be');
   initPitchHistory(opts.pitchHistoryProportion*width);
   initLineNotes();
 }
@@ -96,9 +108,9 @@ function draw() {
   noStroke();
   if (showStats) {
     fill('white');
-    text('Center Clip: ' + centerClipThreshold.toFixed(2), width - 180, 20);
-    text('Variance threshold: ' + varThreshold.toFixed(1), width - 180, 35);
-    text('Fundamental Frequency: ' + freq.toFixed(1), width - 180, 50);
+    text('Center Clip: ' + centerClipThreshold.toFixed(2), width - 220, 20);
+    text('Variance threshold: ' + varThreshold.toFixed(1), width - 220, 35);
+    text('Fundamental Frequency: ' + freq.toFixed(1), width - 220, 50);
   }
 
   // music staff
@@ -110,7 +122,7 @@ function draw() {
   if (showCurrentFreq) {
     fill(opts.cursorColor);
     noStroke();
-    ellipse(pitchHistory.length * opts.stepX, freqPos, opts.cursorDiameter);
+    ellipse(pitchHistory.length * stepX, freqPos, opts.cursorDiameter);
     labelCurrentNote(freqPos);
   }
   
@@ -125,23 +137,25 @@ function draw() {
   showScore();
 }
 
+function roundTo(x, n) { return +x.toFixed(n); }
+
 function drawSongNotes(showCurrentFreq, isPaused) { 
-  let n = songNotes.notes;
+  let n = songData.notes;
   let index = 0;
   
-  songCurrentTime += opts.stepX;
+  songCurrentTime += stepX;
   for (let note of n) {
     if (isPaused) {
       continue;
-    } else if (songCurrentTime === note.time) {
+    } else if (songCurrentTime === roundTo(note.time/tickDivisor, 0)) {
       // note at right edge of screen
-      let id = note.id;
+      let id = note.note + songNoteTranspose;
       let noteFreq = midiToFreq(id);
       let posY = freqToHeight(noteFreq);
       let pos = createVector(width, posY);
       notesObj.push(new Note(noteFreq, pos, opts.noteDiameter, note.name));
-    } else if (songCurrentTime > note.time) {
-      if (songCurrentTime - (+(opts.pitchHistoryProportion*width).toFixed(0)) === note.time) {
+    } else if (songCurrentTime > roundTo(note.time/tickDivisor, 0)) {
+      if (songCurrentTime - (+(opts.pitchHistoryProportion*width).toFixed(0)) === roundTo(note.time/tickDivisor, 0)) {
         // note currently being sung
         notesObj[index].setScore(freq, opts.centsThresh, showCurrentFreq);
       } else {
@@ -160,7 +174,7 @@ function drawSongNotes(showCurrentFreq, isPaused) {
 }
 
 function checkIfSongEnded() {
-  let maxSongTime = songNotes.notes[songNotes.notes.length-1].time;
+  let maxSongTime = songData.notes[songData.notes.length-1].time;
   if (songCurrentTime - width*opts.pitchHistoryProportion > maxSongTime) {
     scoreSong();
   }
@@ -172,7 +186,7 @@ function checkIfSongEnded() {
 function endSong() {
   songState = "play"; // restarts song
   notesObj = [];
-  songCurrentTime = 0;
+  songCurrentTime = -1;
 }
 
 function scoreSong() {
@@ -232,7 +246,7 @@ function drawPitchHistory(pitchHistory, freqPos, isPaused) {
       runningMean = (1-opts.alphaSmoothing)*runningMean + opts.alphaSmoothing*pitchHistory[i];
       runningVar = (1-opts.alphaSmoothingVar)*runningVar + opts.alphaSmoothingVar*Math.pow(pitchHistory[i] - runningMean, 2);
       if (runningVar < varThreshold) {
-        vertex(i * opts.stepX, pitchHistory[i]);
+        vertex(i * stepX, pitchHistory[i]);
       } else {
         endShape(); beginShape();
       }
@@ -286,7 +300,7 @@ function labelCurrentNote(freqPos) {
 }
 
 function initPitchHistory(stageWidth) {
-  for (let i = 0; i < stageWidth + opts.stepX; i += opts.stepX) {
+  for (let i = 0; i < stageWidth + stepX; i += stepX) {
     pitchHistory.push(0);
     pitchConfidenceHistory.push(0);
   }
@@ -330,7 +344,7 @@ function mouseClicked() {
 
 function keyPressed() {
   // todo: make it space bar
-  if (keyCode === DOWN_ARROW) {
+  if (keyCode === 32) {
     if (songState.localeCompare("pause") == 0) {
       songState = songStateOnPause;
       console.log("restoring state: " + songStateOnPause);
@@ -339,7 +353,7 @@ function keyPressed() {
       songState = "pause";
       console.log("pausing");
     }
-  } else if (keyCode === LEFT_ARROW) {
+  } else if (keyCode === DOWN_ARROW) {
     showStats = !showStats;
   }
 }
