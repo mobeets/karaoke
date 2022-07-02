@@ -13,22 +13,22 @@ let viewStyle = 'chromatic';
 let showStats = false;
 let lastScore = { score: 0, percentCorrect: 0, notesHit: 0, notesMissed: 0, notesTotal: 0};
 let lastScoreTime = 0;
-let fr = 30; // frames per second (attempted)
+let fps = 45; // frames per second (attempted)
 let songNoteTranspose = -12; // midi notes to add to every note
 let bpm = 120; // beats per minute
-let stepX = 1; // time steps per frame (frameRate / ticksPerSecond)
+let stepX = 2; // pixel translations per frame
 let tickDivisor = 1; // for fitting in one tick per frame
 
 const opts = {
   pitchHistoryProportion: 0.5, // proportion of screen
   pitchHistoryColor: '#9691e6',
   cursorColor: '#5751b0',
-  cursorDiameter: 20, // radius of circle showing current pitch
-  noteDiameter: 20, // radius of circle showing note
+  cursorDiameter: 14, // radius of circle showing current pitch
+  noteDiameter: 14, // radius of circle showing note
   midiNoteScreenMin: 45, // lowest note in range of screen
-  midiNoteScreenMax: 70, // highest note in range of screen
-  midiNoteStaffMin: 45, // lowest note drawn on staff
-  midiNoteStaffMax: 70, // highest note drawn on staff
+  midiNoteScreenMax: 77, // highest note in range of screen
+  midiNoteStaffMin: 50, // lowest note drawn on staff
+  midiNoteStaffMax: 72, // highest note drawn on staff
   centsThresh: 100, // to make lines wiggle
   preNormalize: true, // normalize pre autocorrelation
   postNormalize: true, // normalize post autocorrelation
@@ -40,6 +40,7 @@ const opts = {
   fontSizeNote: 14,
   fontSizeDefault: 14,
   fontSizeScore: 14,
+  fontSizeLyrics: 12,
 };
 
 let songState = 'stop';
@@ -68,16 +69,19 @@ function makeRandomSong(nNotes) {
   songData = { name: "Random", notes: songNotes };
 }
 
+function tempoToBpm(tempo) { return (60 * 1000000) / tempo; }
+
 function loadSong(songName) {
   songData = letItBe;
+  bpm = tempoToBpm(songData.tempos[0].tempo);
   let tps = songData.ticks_per_beat * (bpm/60); // ticks per second
-  tickDivisor = tps/fr; // ticks per frame
+  tickDivisor = (tps/fps)/stepX; // ticks per frame
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noFill();
-  frameRate(fr);
+  frameRate(fps);
 
   source = new p5.AudioIn();
   source.start();
@@ -108,13 +112,16 @@ function draw() {
   noStroke();
   if (showStats) {
     fill('white');
-    text('Center Clip: ' + centerClipThreshold.toFixed(2), width - 220, 20);
+    textSize(opts.fontSizeDefault);
+    // text('Center Clip: ' + centerClipThreshold.toFixed(2), width - 220, 20);
+    text('Frame rate: ' + frameRate().toFixed(0), width - 220, 20);
     text('Variance threshold: ' + varThreshold.toFixed(1), width - 220, 35);
-    text('Fundamental Frequency: ' + freq.toFixed(1), width - 220, 50);
+    // text('Fundamental Frequency: ' + freq.toFixed(1), width - 220, 50);
   }
 
   // music staff
   drawMusicStaff(showCurrentFreq);
+  noFill(); stroke('#ababab'); strokeWeight(1); line(width/2,0,width/2,height);
 
   // pitch history
   let freqPos = freqToHeight(freq);
@@ -133,6 +140,7 @@ function draw() {
 
   if (!isPaused) {
     checkIfSongEnded();
+    scoreSong();
   }
   showScore();
 }
@@ -141,44 +149,45 @@ function roundTo(x, n) { return +x.toFixed(n); }
 
 function drawSongNotes(showCurrentFreq, isPaused) { 
   let n = songData.notes;
-  let index = 0;
   
-  songCurrentTime += stepX;
-  for (let note of n) {
-    if (isPaused) {
-      continue;
-    } else if (songCurrentTime === roundTo(note.time/tickDivisor, 0)) {
-      // note at right edge of screen
-      let id = note.note + songNoteTranspose;
-      let noteFreq = midiToFreq(id);
-      let posY = freqToHeight(noteFreq);
-      let pos = createVector(width, posY);
-      notesObj.push(new Note(noteFreq, pos, opts.noteDiameter, note.name));
-    } else if (songCurrentTime > roundTo(note.time/tickDivisor, 0)) {
-      if (songCurrentTime - (+(opts.pitchHistoryProportion*width).toFixed(0)) === roundTo(note.time/tickDivisor, 0)) {
-        // note currently being sung
-        notesObj[index].setScore(freq, opts.centsThresh, showCurrentFreq);
-      } else {
-        // note currently on screen
-        if (showCurrentFreq && notesObj[index].isFocus(freq, opts.centsThresh)) {
-          notesObj[index].setOn();
+  for (var i = 0; i < stepX; i++) { // draw the next stepX notes
+    let index = 0;
+    songCurrentTime += 1;
+    for (let note of n) {
+      if (isPaused) {
+        continue;
+      } else if (songCurrentTime === roundTo(note.time/tickDivisor, 0)) {
+        // create note (just to right edge of screen)
+        let id = note.note + songNoteTranspose;
+        let noteFreq = midiToFreq(id);
+        let posY = freqToHeight(noteFreq);
+        let pos = createVector(width, posY);
+        notesObj.push(new Note(noteFreq, pos, opts.noteDiameter, note.name));
+      } else if (songCurrentTime > roundTo(note.time/tickDivisor, 0)) {
+        // note is in view
+        if (songCurrentTime - (+(opts.pitchHistoryProportion*width).toFixed(0)) === roundTo(note.time/tickDivisor, 0)) {
+          // note currently being sung
+          notesObj[index].setScore(freq, opts.centsThresh, showCurrentFreq);
         } else {
-          notesObj[index].setOff();
+          // note currently on screen
+          if (showCurrentFreq && notesObj[index].isFocus(freq, opts.centsThresh)) {
+            notesObj[index].setOn();
+          } else {
+            notesObj[index].setOff();
+          }
         }
+        notesObj[index].update();
+        notesObj[index].draw();
       }
-      notesObj[index].update();
-      notesObj[index].draw();
+      index++;
     }
-    index++;
   }
 }
 
 function checkIfSongEnded() {
   let maxSongTime = songData.notes[songData.notes.length-1].time;
-  if (songCurrentTime - width*opts.pitchHistoryProportion > maxSongTime) {
-    scoreSong();
-  }
   if (songCurrentTime - width*opts.pitchHistoryProportion > maxSongTime + opts.timeBuffer) {
+    console.log('song ended');
     endSong();
   }
 }
@@ -190,32 +199,33 @@ function endSong() {
 }
 
 function scoreSong() {
-  console.log('song ended');
+  // todo: update incrementally, as notes are passed
 
   // get scores of all notes that have passed
-  let scores = [];
-  for (let note of notesObj) {
-    if (note.isPassed) {
-      scores.push(note.score);
-    }
-  }
-
-  // get score and display
   let avgError = 0;
+  let nNotesPassed = 0;
   let nNotesHit = 0;
   let nNotesSung = 0;
-  for (var i = 0; i < scores.length; i++) {
-    if (!isNaN(scores[i])) {
-      avgError += Math.abs(scores[i]);
-      nNotesHit += Math.abs(scores[i]) < opts.centsThresh;
-      nNotesSung += 1;
+  for (let note of notesObj) {
+    if (note.isPassed) {
+      nNotesPassed += 1;
+      let score = note.score;
+      if (!isNaN(score)) {
+        nNotesSung += 1;
+        avgError += Math.abs(score);
+        nNotesHit += Math.abs(score) < opts.centsThresh;
+      }
     }
   }
 
   if (nNotesSung > 0) {
-    avgError = avgError/nNotesSung;
-    pctCorrect = nNotesHit/nNotesSung;
-    lastScore = { score: avgError, percentCorrect: 100*pctCorrect, notesHit: nNotesHit, notesMissed: notesObj.length-nNotesSung, notesTotal: notesObj.length};
+    lastScore = {
+      score: avgError/nNotesSung,
+      percentCorrect: 100*nNotesHit/nNotesSung,
+      notesHit: nNotesHit,
+      notesMissed: nNotesPassed-nNotesSung,
+      notesTotal: nNotesPassed
+    };
     lastScoreTime = frameCount;
   }
 }
@@ -335,7 +345,7 @@ function mouseClicked() {
   if (songState.localeCompare("notready") == 0) { return; }
   if (songState.localeCompare("play") == 0) {
     console.log("stopping song");
-    endAndScoreSong();
+    endSong();
   } else {
     console.log("playing song");
     songState = "play";

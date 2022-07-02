@@ -11,7 +11,8 @@ class Note {
     this.pBMove = 0;
     this.force = 0;
     this.isOn = false;
-    this.isPassed = true;
+    this.isPassed = false;
+    this.isDead = false;
     this.score = NaN;
   }
   isFocus(freq, centsThresh) {
@@ -46,31 +47,24 @@ class Note {
   }
   setOn() {
     if (this.isPassed) { return; }
-    this.isOn = true;
-    this.color = "yellow";
-    this.diameter = this.defaultDiameter;
-    this.force = 20;
-    this.pBMove = sin(frameCount) * this.force;
   }
   setOff() {
     if (this.isPassed) { return; }
-    this.isOn = false;
-    this.color = "white";
-    this.diameter = this.defaultDiameter;
-    if (this.force > 0) {
-      this.force -= 1;
-      this.pBMove = sin(frameCount) * this.force;
-    }
   }
   update() {
+    if (this.isDead) { return; } // no longer visible
     this.position.add(this.velocity);
+    if (this.position.x < 0) { this.isDead = true; }
   }
   draw() {
+    if (this.isDead) { return; } // no longer visible
+
     noStroke();
     fill(this.color);
     ellipse(this.position.x, this.position.y, this.diameter, this.diameter);
 
     textAlign(CENTER);
+    textSize(opts.fontSizeLyrics);
     text(this.name, this.position.x, this.position.y - this.diameter);
     textAlign(LEFT);
   }
