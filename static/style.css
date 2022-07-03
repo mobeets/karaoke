@@ -16,10 +16,6 @@ body {
 
 #wrapper {
   /*margin: 0 auto;*/
-  display: table; /* takes width of children */
-  margin-top: 20px;
-  padding-left: 10px;
-  padding-right: 10px;
 }
 #content {
   padding-top: 20px;

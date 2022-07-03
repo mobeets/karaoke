@@ -12,6 +12,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mido import MidiFile
 
+#%% convert ultrastar file to json
+
+fnm = 'assets/songs/adele-rolling-in-the-deep.txt'
+lines = open(fnm).readlines()
+get_line = lambda key: [x for x in lines if x.startswith('#{}'.format(key.upper()))][0].split('#{}:'.format(key.upper()))[1].strip()
+artist = get_line('artist')
+title = get_line('title')
+bpm = float(get_line('bpm'))
+gap = int(get_line('gap'))
+note_start_keys = [':', '*', 'F']
+notes = []
+for line in lines:
+    if any([line.startswith(key) for key in note_start_keys]):
+        item = line.split()
+        t = int(item[1])
+        dur = int(item[2])
+        pitch = int(item[3])
+        word = item[4].strip()
+        word = word if word != '~' else ''
+        note = {'time': t, 'duration': dur, 'note': pitch, 'name': word}
+        notes.append(note)
+song = {'artist': artist, 'title': title, 'bpm': bpm, 'gap': gap, 
+        'notes': notes}
+json.dump(song, open('/Users/mobeets/code/karaoke-trainer/assets/songs/adele-rolling-in-the-deep.json', 'w'))
+
 #%%
 
 mid = MidiFile('/Users/mobeets/Downloads/Let It Be - The Beatles (demo).mid', clip=True)

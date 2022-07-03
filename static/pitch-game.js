@@ -50,7 +50,6 @@ let notesObj = [];
 let songData = {};
 let randomSongLength = 5;
 
-// todo: load JSON
 function makeRandomSong(nNotes) {
   let firstTime = 1;
   let timeSpacing = 40;
