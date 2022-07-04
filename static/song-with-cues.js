@@ -66,7 +66,19 @@ function loadSong(audioEl, songData) {
   let gap = songData.gap/1000 - songOffsetMsecs/1000; // time in seconds when lyrics start
   let ns = songData.notes;
 
+  // first need to find min/max notes for setting range
   let minNote = 100; let maxNote = 0;
+  for (var i = 0; i < ns.length; i++) {
+    let note = ns[i];
+    if ((note.note + songNoteTranspose) < minNote) { minNote = note.note + songNoteTranspose; }
+    if ((note.note + songNoteTranspose) > maxNote) { maxNote = note.note + songNoteTranspose; }
+  }
+  opts.midiNoteStaffMin = minNote;
+  opts.midiNoteStaffMax = maxNote;
+  opts.midiNoteScreenMin = opts.midiNoteStaffMin-2;
+  opts.midiNoteScreenMax = opts.midiNoteStaffMax+2;
+
+  // now create notes
   for (var i = 0; i < ns.length; i++) {
     let note = ns[i];
     let noteStartTime = gap + note.time/(4*bps);
@@ -76,14 +88,7 @@ function loadSong(audioEl, songData) {
     let noteDiameter = roundTo(noteHeight - freqToHeight(Math.exp(opts.errorCentsThresh/(100*12) + Math.log(noteFreq))),1);
 
     songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter));
-
-    if ((note.note + songNoteTranspose) < minNote) { minNote = note.note + songNoteTranspose; }
-    if ((note.note + songNoteTranspose) > maxNote) { maxNote = note.note + songNoteTranspose; }
   }
-  opts.midiNoteStaffMin = minNote;
-  opts.midiNoteStaffMax = maxNote;
-  opts.midiNoteScreenMin = opts.midiNoteStaffMin-2;
-  opts.midiNoteScreenMax = opts.midiNoteStaffMax+2;
 }
 
 class Note {
@@ -294,12 +299,9 @@ function keyPressed() {
   if (keyCode === 70) { // F key
     doDetectPitch = !doDetectPitch;
   } else if (keyCode === 32) { // spacebar
-    console.log([!audioEl.parent().children[0].paused, audioEl.parent().children[0].currentTime]);
     if (audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0) {
-      console.log('playing');
       audioEl.play();
     } else {
-      console.log('pausing');
       audioEl.pause();
     }
   }
