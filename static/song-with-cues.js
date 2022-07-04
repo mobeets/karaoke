@@ -20,7 +20,7 @@ const opts = {
   timePerThousandPixels: 3, // time (in seconds) shown on screen before/after
   noteColorDefault: '#898989', // default color for lyrics
   noteColorActive: 'white', // color for active lyric
-  pitchColor: '#5751b0', // color for circle showing pitch being sung
+  pitchColor: 'white', // color for circle showing pitch being sung
   pitchDiameter: 10, // diameter for circle showing pitch being sung
   errorCentsThresh: 50, // error allowed for a note counting
   fontSizeLyrics: 14, // font size for lyrics
@@ -73,18 +73,22 @@ function loadSong(audioEl, songData) {
     let noteDuration = note.duration/(4*bps);
     let noteFreq = midiToFreq(note.note + songNoteTranspose);
     let noteHeight = freqToHeight(noteFreq);
-    songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight));
+    // let noteDiameter = 10;
+
+    let noteDiameter = roundTo(noteHeight - freqToHeight(Math.exp(opts.errorCentsThresh/(100*12) + Math.log(noteFreq))),1);
+
+    songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter));
   }
 }
 
 class Note {
-  constructor(freq, startTime, duration, name, height) {
+  constructor(freq, startTime, duration, name, height, diameter) {
     this.freq = freq;
     this.startTime = startTime;
     this.duration = duration;
     this.height = height;
     this.name = name;
-    this.diameter = 10;
+    this.diameter = diameter;
     this.colorDefault = opts.noteColorDefault;
     this.colorActive = opts.noteColorActive;
     this.windowSecs = opts.timePerThousandPixels * (windowWidth/1000); // time on screen before or after
@@ -151,8 +155,15 @@ class Note {
 
     // draw note
     noStroke();
-    fill(color);
-    rect(x1, this.height - this.diameter/2, x2-x1, this.diameter);
+    if (this.isActive(curSongTime)) {
+      fill(this.colorDefault);
+      rect(width/2, this.height - this.diameter/2, x2-width/2, this.diameter);
+      fill(color);
+      rect(x1, this.height - this.diameter/2, width/2-x1, this.diameter);
+    } else {
+      fill(color);
+      rect(x1, this.height - this.diameter/2, x2-x1, this.diameter);
+    }
 
     // write word
     textAlign(LEFT);
@@ -199,10 +210,11 @@ function showScore(curSongTime) {
   let meanScoreWhenHit = errWhenHit/nHit;
   let pctHit = 100*nHit/nNotes;
 
-  let scoreHeight = 20 + opts.fontSizeScore;
+  let scoreYPos = height - opts.fontSizeScore;
+  let scoreHeight = 0.9*(20 + opts.fontSizeScore);
 
   fill(opts.colorHitNote); noStroke();
-  ellipse(width/2, scoreHeight-opts.fontSizeScore/3, 0.9*scoreHeight, 0.9*scoreHeight);
+  ellipse(width/2, scoreYPos-opts.fontSizeScore/3, scoreHeight, scoreHeight);
 
   // average error
   if (!isNaN(meanScoreWhenHit)) {
@@ -217,7 +229,7 @@ function showScore(curSongTime) {
     noFill();
     stroke('red');
     strokeWeight(3);
-    arc(width/2, scoreHeight-opts.fontSizeScore/3, 0.9*scoreHeight, 0.9*scoreHeight, startAng, endAng);
+    arc(width/2, scoreYPos-opts.fontSizeScore/3, scoreHeight, scoreHeight, startAng, endAng);
   }
 
   // total score
@@ -225,19 +237,17 @@ function showScore(curSongTime) {
   fill('white');
   noStroke();
   textAlign(CENTER);
-  text(nHit.toFixed(0 ), width/2, scoreHeight);
+  text(nHit.toFixed(0 ), width/2, scoreYPos);
   textAlign(LEFT);
 }
 
 function showTitle() {
   let a = songData.artist;
   let b = songData.title;
-  textAlign(CENTER);
   textSize(opts.fontSizeTitle);
   fill('white');
   noStroke();
-  text('"' + b + '" by ' + a, width/2, height-1.5*opts.fontSizeTitle);
-  textAlign(LEFT);
+  text('"' + b + '" by ' + a, 20, height-1.5*opts.fontSizeTitle);
 }
 
 function draw() {
