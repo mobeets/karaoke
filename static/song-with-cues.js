@@ -18,13 +18,17 @@ const opts = {
   midiNoteScreenMin: 50, // lowest note in range of screen
   midiNoteScreenMax: 80, // highest note in range of screen
   timePerThousandPixels: 3, // time (in seconds) shown on screen before/after
-  fontSizeLyrics: 14, // font size for lyrics
   noteColorDefault: '#898989', // default color for lyrics
   noteColorActive: 'white', // color for active lyric
   pitchColor: '#5751b0', // color for circle showing pitch being sung
   pitchDiameter: 10, // diameter for circle showing pitch being sung
   errorCentsThresh: 50, // error allowed for a note counting
-  fontSizeScore: 14, // font size for showing score
+  fontSizeLyrics: 14, // font size for lyrics
+  fontSizeScore: 20, // font size for showing score
+  fontSizeTitle: 14, // font size for song title
+  colorHitNote: 'green',
+  colorMissedNote: 'red',
+  colorLyricsUpcoming: 'white',
 };
 
 function roundTo(x, n) { return +x.toFixed(n); }
@@ -89,6 +93,10 @@ class Note {
     this.scoreCount = 0;
   }
 
+  isUpcoming(curSongTime) {
+    return this.startTime >= curSongTime;
+  }
+
   isActive(curSongTime) {
     return (this.startTime <= curSongTime) && (curSongTime <= this.startTime + this.duration);
   }
@@ -115,15 +123,15 @@ class Note {
     if (this.isActive(curSongTime)) {
       // return this.colorActive;
       if (this.score < opts.errorCentsThresh) {
-        return "#73f06e";
+        return opts.colorHitNote;
       } else {
-        return "#cc2910";
+        return opts.colorMissedNote;
       }
     } else if (this.isPassed(curSongTime)) {
       if (this.score < opts.errorCentsThresh) {
-        return "#73f06e";
+        return opts.colorHitNote;
       } else {
-        return "#cc2910";
+        return opts.colorMissedNote;
       }
     } else {
       return this.colorDefault;
@@ -148,6 +156,9 @@ class Note {
 
     // write word
     textAlign(LEFT);
+    if (this.isUpcoming(curSongTime)) {
+      fill(opts.colorLyricsUpcoming);
+    }
     textSize(opts.fontSizeLyrics);
     let wordHeight = this.height - this.diameter/2; // with note
     if (showLyricsAboveStaff) {
@@ -183,12 +194,15 @@ function showScore(curSongTime) {
       nHit += (note.score < opts.errorCentsThresh);
     }
   }
-  if (nNotes === 0) { return; }
+  // if (nNotes === 0) { return; }
   let meanScore = sumScore/nNotes;
   let meanScoreWhenHit = errWhenHit/nHit;
   let pctHit = 100*nHit/nNotes;
 
-  let scoreHeight = 30;
+  let scoreHeight = 20 + opts.fontSizeScore;
+
+  fill(opts.colorHitNote); noStroke();
+  ellipse(width/2, scoreHeight-opts.fontSizeScore/3, 0.9*scoreHeight, 0.9*scoreHeight);
 
   // average error
   if (!isNaN(meanScoreWhenHit)) {
@@ -203,16 +217,15 @@ function showScore(curSongTime) {
     noFill();
     stroke('red');
     strokeWeight(3);
-    arc(width/2, scoreHeight, scoreHeight, scoreHeight, startAng, endAng);
+    arc(width/2, scoreHeight-opts.fontSizeScore/3, 0.9*scoreHeight, 0.9*scoreHeight, startAng, endAng);
   }
 
-  // percent correct
+  // total score
   textSize(opts.fontSizeScore);
   fill('white');
   noStroke();
-  // arc(width/2, 10 + opts.fontSizeScore, 20, 20, 0, pctHit*TWO_PI/100, PIE);
   textAlign(CENTER);
-  text(pctHit.toFixed(0 ), width/2, scoreHeight);
+  text(nHit.toFixed(0 ), width/2, scoreHeight);
   textAlign(LEFT);
 }
 
@@ -220,10 +233,10 @@ function showTitle() {
   let a = songData.artist;
   let b = songData.title;
   textAlign(CENTER);
-  textSize(1.2*opts.fontSizeScore);
+  textSize(opts.fontSizeTitle);
   fill('white');
   noStroke();
-  text('"' + b + '" by ' + a, width/2, height-1.5*opts.fontSizeScore);
+  text('"' + b + '" by ' + a, width/2, height-1.5*opts.fontSizeTitle);
   textAlign(LEFT);
 }
 
