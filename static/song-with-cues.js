@@ -84,7 +84,8 @@ class Note {
     this.colorDefault = opts.noteColorDefault;
     this.colorActive = opts.noteColorActive;
     this.windowSecs = opts.timePerThousandPixels * (windowWidth/1000); // time on screen before or after
-    this.score = NaN;
+    this.score = NaN; // mean abs error in cents
+    this.scoreSigned = NaN; // mean error in cents
     this.scoreCount = 0;
   }
 
@@ -97,13 +98,17 @@ class Note {
   }
 
   updateScore(freq) {
-    if (isNaN(this.score)) { this.score = 0; }
+    if (isNaN(this.score)) {
+      this.score = 0;
+      this.scoreSigned = 0;
+    }
 
     let curError = 100*12*(Math.log(freq) - Math.log(this.freq));
-    let curScore = Math.abs(curError);
+    let curScore = curError;
 
     this.scoreCount += 1;
-    this.score = this.score + (curScore - this.score)/this.scoreCount;
+    this.score = this.score + (Math.abs(curScore) - this.score)/this.scoreCount;
+    this.scoreSigned = this.scoreSigned + (curScore - this.scoreSigned)/this.scoreCount;
   }
 
   getColor(curSongTime) {
@@ -146,14 +151,14 @@ class Note {
     textSize(opts.fontSizeLyrics);
     let wordHeight = this.height - this.diameter/2; // with note
     if (showLyricsAboveStaff) {
-      wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax));
+      wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
     }
     text(this.name, x1, wordHeight);
   }
 }
 
 function drawStaffs() {
-  for (var i = opts.midiNoteStaffMin; i < opts.midiNoteStaffMax; i++) {
+  for (var i = opts.midiNoteStaffMin; i <= opts.midiNoteStaffMax; i++) {
     let curHeight = freqToHeight(midiToFreq(i));
     stroke('white');
     strokeWeight(1);
@@ -172,7 +177,7 @@ function showScore(curSongTime) {
       if (!isNaN(note.score)) {
         sumScore += note.score;
         if (note.score < opts.errorCentsThresh) {
-          errWhenHit += note.score;
+          errWhenHit += note.scoreSigned;
         }
       }
       nHit += (note.score < opts.errorCentsThresh);
@@ -183,19 +188,32 @@ function showScore(curSongTime) {
   let meanScoreWhenHit = errWhenHit/nHit;
   let pctHit = 100*nHit/nNotes;
 
-  textSize(opts.fontSizeScore);
-  fill('white');
-  noStroke();
+  let scoreHeight = 30;
 
   // average error
   if (!isNaN(meanScoreWhenHit)) {
-    arc(20, 10 + opts.fontSizeScore, 20, 20, 0, map(meanScoreWhenHit, 0, opts.errorCentsThresh, 0, TWO_PI), PIE);
-    text(meanScoreWhenHit.toFixed(0), 35, 30);
+    let errAng = map(meanScoreWhenHit, -opts.errorCentsThresh, opts.errorCentsThresh, -PI/2, PI/2);
+    let startAng = -PI/2;
+    let endAng = startAng + errAng;
+    if (endAng < startAng) {
+      let tmpAng = endAng;
+      endAng = startAng;
+      startAng = tmpAng;
+    }    
+    noFill();
+    stroke('red');
+    strokeWeight(3);
+    arc(width/2, scoreHeight, scoreHeight, scoreHeight, startAng, endAng);
   }
 
   // percent correct
-  arc(20, 25 + 2*opts.fontSizeScore, 20, 20, 0, pctHit*TWO_PI/100, PIE);
-  text(pctHit.toFixed(0) + '%', 35, 30 + 2*opts.fontSizeScore);
+  textSize(opts.fontSizeScore);
+  fill('white');
+  noStroke();
+  // arc(width/2, 10 + opts.fontSizeScore, 20, 20, 0, pctHit*TWO_PI/100, PIE);
+  textAlign(CENTER);
+  text(pctHit.toFixed(0 ), width/2, scoreHeight);
+  textAlign(LEFT);
 }
 
 function showTitle() {
@@ -222,7 +240,10 @@ function draw() {
   // show current time
   stroke('white');
   strokeWeight(1);
-  line(width/2, 0, width/2, height);
+
+  let y1 = freqToHeight(midiToFreq(opts.midiNoteStaffMin));
+  let y2 = freqToHeight(midiToFreq(opts.midiNoteStaffMax));
+  line(width/2, y1, width/2, y2);
 
   // show pitch being sung
   if (doDetectPitch) {

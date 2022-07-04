@@ -1,5 +1,5 @@
 #ARTIST:Adele
-#TITLE:Rolling In The Deep (Studio Footage)
+#TITLE:Rolling In The Deep
 #MP3:Adele - Rolling In The Deep (Studio Footage).mp3
 #EDITION:None
 #GENRE:Pop
