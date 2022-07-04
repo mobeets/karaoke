@@ -7,9 +7,7 @@ let songNoteTranspose = 60;
 let songOffsetMsecs = 0;
 let doDetectPitch = true;
 let showLyricsAboveStaff = true;
-
-// todo: convert "timeOnScreen" to be per pixels,
-//    since what is acceptable will be constant wrt screen width
+let ignoreOctaveShifts = true; // does nothing yet!
 
 let opts = {
   backgroundColor: '#383636',
@@ -116,13 +114,17 @@ class Note {
     return curSongTime >= this.startTime + this.duration;
   }
 
+  errorInCents(freq) {
+    return 100*12*(Math.log(freq) - Math.log(this.freq));
+  }
+
   updateScore(freq) {
     if (isNaN(this.score)) {
       this.score = 0;
       this.scoreSigned = 0;
     }
 
-    let curError = 100*12*(Math.log(freq) - Math.log(this.freq));
+    let curError = this.errorInCents(freq);
     let curScore = curError;
 
     this.scoreCount += 1;
@@ -291,5 +293,14 @@ function draw() {
 function keyPressed() {
   if (keyCode === 70) { // F key
     doDetectPitch = !doDetectPitch;
+  } else if (keyCode === 32) { // spacebar
+    console.log([!audioEl.parent().children[0].paused, audioEl.parent().children[0].currentTime]);
+    if (audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0) {
+      console.log('playing');
+      audioEl.play();
+    } else {
+      console.log('pausing');
+      audioEl.pause();
+    }
   }
 }
