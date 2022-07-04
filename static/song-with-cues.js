@@ -11,7 +11,7 @@ let showLyricsAboveStaff = true;
 // todo: convert "timeOnScreen" to be per pixels,
 //    since what is acceptable will be constant wrt screen width
 
-const opts = {
+let opts = {
   backgroundColor: '#383636',
   midiNoteStaffMin: 55, // lowest note drawn on staff
   midiNoteStaffMax: 75, // highest note drawn on staff
@@ -67,18 +67,25 @@ function loadSong(audioEl, songData) {
   let bps = songData.bpm/60; // beats per second
   let gap = songData.gap/1000 - songOffsetMsecs/1000; // time in seconds when lyrics start
   let ns = songData.notes;
+
+  let minNote = 100; let maxNote = 0;
   for (var i = 0; i < ns.length; i++) {
     let note = ns[i];
     let noteStartTime = gap + note.time/(4*bps);
     let noteDuration = note.duration/(4*bps);
     let noteFreq = midiToFreq(note.note + songNoteTranspose);
     let noteHeight = freqToHeight(noteFreq);
-    // let noteDiameter = 10;
-
     let noteDiameter = roundTo(noteHeight - freqToHeight(Math.exp(opts.errorCentsThresh/(100*12) + Math.log(noteFreq))),1);
 
     songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter));
+
+    if ((note.note + songNoteTranspose) < minNote) { minNote = note.note + songNoteTranspose; }
+    if ((note.note + songNoteTranspose) > maxNote) { maxNote = note.note + songNoteTranspose; }
   }
+  opts.midiNoteStaffMin = minNote;
+  opts.midiNoteStaffMax = maxNote;
+  opts.midiNoteScreenMin = opts.midiNoteStaffMin-2;
+  opts.midiNoteScreenMax = opts.midiNoteStaffMax+2;
 }
 
 class Note {
@@ -181,9 +188,9 @@ class Note {
 
 function drawStaffs() {
   for (var i = opts.midiNoteStaffMin; i <= opts.midiNoteStaffMax; i++) {
-    let curHeight = freqToHeight(midiToFreq(i));
     stroke('white');
     strokeWeight(1);
+    let curHeight = freqToHeight(midiToFreq(i));
     line(0, curHeight, width, curHeight);
   }
 }
@@ -248,6 +255,7 @@ function showTitle() {
   fill('white');
   noStroke();
   text('"' + b + '" by ' + a, 20, height-1.5*opts.fontSizeTitle);
+  // <div id="audio-controls"></div><br/>
 }
 
 function draw() {
