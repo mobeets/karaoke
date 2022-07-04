@@ -3,7 +3,7 @@ let songName = "adele-rolling-in-the-deep";
 let songNotes = [];
 let source, fft, lowPass;
 let freq = 0;
-let songNoteTranspose = 48;
+let songNoteTranspose = 60;
 let songOffsetMsecs = 0;
 let doDetectPitch = true;
 let showLyricsAboveStaff = true;
@@ -13,16 +13,18 @@ let showLyricsAboveStaff = true;
 
 const opts = {
   backgroundColor: '#383636',
-  midiNoteStaffMin: 45, // lowest note drawn on staff
-  midiNoteStaffMax: 65, // highest note drawn on staff
-  midiNoteScreenMin: 40, // lowest note in range of screen
-  midiNoteScreenMax: 70, // highest note in range of screen
+  midiNoteStaffMin: 55, // lowest note drawn on staff
+  midiNoteStaffMax: 75, // highest note drawn on staff
+  midiNoteScreenMin: 50, // lowest note in range of screen
+  midiNoteScreenMax: 80, // highest note in range of screen
   timePerThousandPixels: 3, // time (in seconds) shown on screen before/after
   fontSizeLyrics: 14, // font size for lyrics
   noteColorDefault: '#898989', // default color for lyrics
   noteColorActive: 'white', // color for active lyric
   pitchColor: '#5751b0', // color for circle showing pitch being sung
   pitchDiameter: 10, // diameter for circle showing pitch being sung
+  errorCentsThresh: 50, // error allowed for a note counting
+  fontSizeScore: 14, // font size for showing score
 };
 
 function roundTo(x, n) { return +x.toFixed(n); }
@@ -82,17 +84,57 @@ class Note {
     this.colorDefault = opts.noteColorDefault;
     this.colorActive = opts.noteColorActive;
     this.windowSecs = opts.timePerThousandPixels * (windowWidth/1000); // time on screen before or after
+    this.score = NaN;
+    this.scoreCount = 0;
   }
-  draw(curSongTime) {
+
+  isActive(curSongTime) {
+    return (this.startTime <= curSongTime) && (curSongTime <= this.startTime + this.duration);
+  }
+
+  isPassed(curSongTime) {
+    return curSongTime >= this.startTime + this.duration;
+  }
+
+  updateScore(freq) {
+    if (isNaN(this.score)) { this.score = 0; }
+
+    let curError = 100*12*(Math.log(freq) - Math.log(this.freq));
+    let curScore = Math.abs(curError);
+
+    this.scoreCount += 1;
+    this.score = this.score + (curScore - this.score)/this.scoreCount;
+  }
+
+  getColor(curSongTime) {
+    if (this.isActive(curSongTime)) {
+      // return this.colorActive;
+      if (this.score < opts.errorCentsThresh) {
+        return "#73f06e";
+      } else {
+        return "#cc2910";
+      }
+    } else if (this.isPassed(curSongTime)) {
+      if (this.score < opts.errorCentsThresh) {
+        return "#73f06e";
+      } else {
+        return "#cc2910";
+      }
+    } else {
+      return this.colorDefault;
+    }
+  }
+
+  draw(curSongTime, freq) {
     if (this.startTime < curSongTime - this.windowSecs) { return; }
     if (this.startTime + this.duration > curSongTime + this.windowSecs) { return; }
     let x1 = map(this.startTime, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
     let x2 = map(this.startTime + this.duration, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
 
-    let color = this.colorDefault;
-    if ((this.startTime <= curSongTime) && (curSongTime <= this.startTime + this.duration)) {
-      color = this.colorActive;
+    if (this.isActive(curSongTime)) {
+      this.updateScore(freq);
     }
+    let color = this.getColor(curSongTime);
 
     // draw note
     noStroke();
@@ -119,6 +161,54 @@ function drawStaffs() {
   }
 }
 
+function showScore(curSongTime) {
+  let nNotes = 0;
+  let nHit = 0;
+  let sumScore = 0;
+  let errWhenHit = 0;
+  for (let note of songNotes) {
+    if (note.isPassed(curSongTime)) {
+      nNotes += 1;
+      if (!isNaN(note.score)) {
+        sumScore += note.score;
+        if (note.score < opts.errorCentsThresh) {
+          errWhenHit += note.score;
+        }
+      }
+      nHit += (note.score < opts.errorCentsThresh);
+    }
+  }
+  if (nNotes === 0) { return; }
+  let meanScore = sumScore/nNotes;
+  let meanScoreWhenHit = errWhenHit/nHit;
+  let pctHit = 100*nHit/nNotes;
+
+  textSize(opts.fontSizeScore);
+  fill('white');
+  noStroke();
+
+  // average error
+  if (!isNaN(meanScoreWhenHit)) {
+    arc(20, 10 + opts.fontSizeScore, 20, 20, 0, map(meanScoreWhenHit, 0, opts.errorCentsThresh, 0, TWO_PI), PIE);
+    text(meanScoreWhenHit.toFixed(0), 35, 30);
+  }
+
+  // percent correct
+  arc(20, 25 + 2*opts.fontSizeScore, 20, 20, 0, pctHit*TWO_PI/100, PIE);
+  text(pctHit.toFixed(0) + '%', 35, 30 + 2*opts.fontSizeScore);
+}
+
+function showTitle() {
+  let a = songData.artist;
+  let b = songData.title;
+  textAlign(CENTER);
+  textSize(1.2*opts.fontSizeScore);
+  fill('white');
+  noStroke();
+  text('"' + b + '" by ' + a, width/2, height-1.5*opts.fontSizeScore);
+  textAlign(LEFT);
+}
+
 function draw() {
   background(opts.backgroundColor);
   drawStaffs();
@@ -126,7 +216,7 @@ function draw() {
   // draw notes if on screen
   let curSongTime = audioEl.time();
   for (let note of songNotes) {
-    note.draw(curSongTime);
+    note.draw(curSongTime, freq);
   }
 
   // show current time
@@ -142,6 +232,8 @@ function draw() {
     ellipse(width/2, freqHeight, opts.pitchDiameter);
   }
 
+  showScore(curSongTime);
+  showTitle();
 }
 
 function keyPressed() {
