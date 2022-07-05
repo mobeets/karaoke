@@ -6,22 +6,19 @@
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <meta property="og:image" content="static/icon.png"/>
 
-    <script src="lib/p5.min.js"></script>
-    <script src="lib/p5.dom.min.js"></script>
-    <script src="lib/p5.sound.min.js"></script>
+    <script src="static/lib/p5.min.js"></script>
+    <script src="static/lib/p5.dom.min.js"></script>
+    <script src="static/lib/p5.sound.min.js"></script>
+    <script src="static/lib/jquery.min.js"></script>
+    <script src="static/lib/jquery-ui.min.js"></script>
 
-    <!-- <script src="static/LineNote.js"></script>
-    <script src="static/Note.js"></script>
-    <script type="text/javascript" language="javascript" src="assets/songs/let-it-be.js"></script> -->
-    <script src="static/pitch-detect.js"></script>
-    <script type="text/javascript" language="javascript" src="assets/songs/adele-rolling-in-the-deep.js"></script>
-    <script type="text/javascript" language="javascript" src="static/song-with-cues.js"></script>
-
-    <!-- <script src="static/pitch-game.js"></script> -->
+    <script src="static/js/pitch-detect.js"></script>
+    <script type="text/javascript" language="javascript" src="static/js/game.js"></script>
 
     <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
     <link rel="icon" type="image/png" href="static/favicon.ico">
-    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <link rel="stylesheet" href="static/lib/jquery-ui.min.css">
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
     <title>Karaoke Trainer</title>
   </head>
   <body>
@@ -35,9 +32,12 @@
             <button onclick="downloadData()">Export</button>
           </p>
         </div> -->
-        <div id="sketch-container"></div><br/>
-        <!-- <span id="song-name"></span> -->
-        <div id="audio-controls"></div><br/>
+        <div id="sketch-container"></div>
+        <div id="audio-controls"></div>
+        <div id="song-selector" class="ui-widget">
+          <label for="songs">Song: </label>
+          <input id="songs">
+        </div>
       </div>
     </div>
   </body>
