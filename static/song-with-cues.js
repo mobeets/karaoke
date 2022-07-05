@@ -2,6 +2,7 @@ let audioEl;
 let songName = "adele-rolling-in-the-deep";
 let songNotes = [];
 let source, fft, lowPass;
+let pitchHistory;
 let freq = 0;
 let songNoteTranspose = 60;
 let songOffsetMsecs = 0;
@@ -20,6 +21,7 @@ let opts = {
   noteColorActive: 'white', // color for active lyric
   pitchColor: 'white', // color for circle showing pitch being sung
   pitchDiameter: 10, // diameter for circle showing pitch being sung
+  pitchHistoryColor: '#cdcdcd', // color for circle showing pitch being sung
   errorCentsThresh: 50, // error allowed for a note counting
   fontSizeLyrics: 14, // font size for lyrics
   fontSizeScore: 20, // font size for showing score
@@ -52,7 +54,9 @@ function setup() {
   source.connect(lowPass);
   fft = new p5.FFT();
   fft.setInput(lowPass);
+  pitchHistory = new PitchHistory(width/2, opts.pitchHistoryColor);
 }
+
 
 function freqToHeight(curFreq) {
   if (curFreq <= 0) { return 0; }
@@ -285,24 +289,71 @@ function draw() {
 
   // show pitch being sung
   if (doDetectPitch) {
+    pitchHistory.draw(curSongTime);
     freq = detectPitch(fft);
     let freqHeight = freqToHeight(freq);
     noStroke(); fill(opts.pitchColor);
     ellipse(width/2, freqHeight, opts.pitchDiameter);
+    if (!isPaused()) {
+      pitchHistory.update(curSongTime, freq);
+    }
   }
 
   showScore(curSongTime);
   showTitle();
 }
 
+class PitchHistory {
+  constructor(duration, color, windowSecs) {
+    this.length = duration;
+    this.color = color;
+    this.times = [];
+    this.history = [];
+    this.windowSecs = opts.timePerThousandPixels * (width/1000); // time on screen before or after
+    for (var i = 0; i < this.length; i++) {
+      this.times.push(-1);
+      this.history.push(-1);
+    }
+  }
+
+  update(curSongTime, freq) {
+    let y = [freq];
+    this.history = y.concat(this.history);
+    this.history.pop();
+
+    let t = [curSongTime];
+    this.times = t.concat(this.times);
+    this.times.pop();
+  }
+
+  timeToXPos(t, curSongTime) {
+    return map(t, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
+  }
+
+  draw(curSongTime) {
+    noFill(); stroke(this.color);
+    beginShape();
+    for (var i = 0; i < this.history.length; i++) {
+      if (this.times[i] <= 0) { continue; }
+      let freqHeight = freqToHeight(this.history[i]);
+      let t = this.timeToXPos(this.times[i], curSongTime);
+      if (freqHeight < 0 || freqHeight > height) {
+        endShape(); beginShape();
+      }
+      vertex(t, freqHeight);
+    }
+    endShape();
+  }
+}
+
+function isPaused() {
+  return audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0;
+}
+
 function keyPressed() {
   if (keyCode === 70) { // F key
     doDetectPitch = !doDetectPitch;
   } else if (keyCode === 32) { // spacebar
-    if (audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0) {
-      audioEl.play();
-    } else {
-      audioEl.pause();
-    }
+    // using this to pause led to double-pausing -> playing
   }
 }
