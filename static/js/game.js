@@ -347,7 +347,7 @@ function isPaused() {
 }
 
 function keyPressed() {
-  if (keyCode === 70) { // F key
+  if (keyCode === 27) { // Esc key
     doDetectPitch = !doDetectPitch;
   } else if (keyCode === 32) { // spacebar
     // using this to pause led to double-pausing -> playing
@@ -388,7 +388,7 @@ function fetchSongData() {
       songList = songNameData;
       console.log(songNameData);
       $("#songs").autocomplete({
-        source: Object.keys(songNameData),
+        source: songNameData,
         minLength: 0,
         select: function( event, ui ) {
           if (ui.item) { updateSong(ui.item.value); }
