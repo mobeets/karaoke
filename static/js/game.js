@@ -355,7 +355,7 @@ function keyPressed() {
 }
 
 function updateSong(songName) {
-  let key = songList[songName];
+  let key = songName;
   let mp3Url = dataUrl + 'mp3/' + key + '.mp3';
   let notesUrl = dataUrl + 'notes/' + key + '.json';
   console.log([songName, key, mp3Url, notesUrl]);
@@ -391,7 +391,11 @@ function fetchSongData() {
         source: songNameData,
         minLength: 0,
         select: function( event, ui ) {
-          if (ui.item) { updateSong(ui.item.value); }
+          if (ui.item) {
+            console.log(ui.item.label);
+            $("#songs").val(ui.item.label);
+            updateSong(ui.item.value);
+          }
         }
       });
     }
