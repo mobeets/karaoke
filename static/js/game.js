@@ -63,7 +63,9 @@ function freqToHeight(curFreq) {
 function loadSongNotesAndLyrics(audioEl, songData) {
   let bps = songData.bpm/60; // beats per second
   let gap = songData.gap/1000 - songOffsetMsecs/1000; // time in seconds when lyrics start
+  
   let ns = songData.notes;
+  let songNoteTranspose = songData.note_transpose;
 
   // first need to find min/max notes for setting range
   let minNote = 100; let maxNote = 0;
@@ -376,6 +378,8 @@ function updateSong(songName) {
       songData = newSongData;
       console.log(newSongData);
       loadSongNotesAndLyrics(audioEl, newSongData);
+      $('#songs').val('"' + songData.title + '" by ' + songData.artist);
+      $('#song-selector').hide();
     }
   });
 }
@@ -393,7 +397,6 @@ function fetchSongData() {
         select: function( event, ui ) {
           if (ui.item) {
             console.log(ui.item.label);
-            $("#songs").val(ui.item.label);
             updateSong(ui.item.value);
           }
         }
