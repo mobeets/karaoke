@@ -6,6 +6,8 @@ html, body {
 body {
   margin: 0;
   display: flex;
+  background: #383636;
+  color: white;
 
   /* This centers our sketch horizontally. */
   justify-content: center;
@@ -13,6 +15,8 @@ body {
   /* This centers our sketch vertically. */
   align-items: center;
 }
+a { color: white; }
+a.link, a.visited, a.hover, a.active { color: white; }
 
 #audio-controls {
   float: left;
@@ -20,16 +24,27 @@ body {
 #song-selector {
   float: left;
   margin-left: 1em;
+  text-align: center;
 }
 
 #wrapper {
   /*margin: 0 auto;*/
 }
 #content {
-  padding-top: 20px;
+  /*padding-top: 20px;*/
+}
+#songs {
+  text-align: center;
+  min-width: 300px;
+}
+#song-title {
+  float: left;
+  margin-top: 0.5em;
+  margin-left: 1.5em;
 }
 
 .byline {
+  color: white;
   float: right;
   font-size: 80%;
 }

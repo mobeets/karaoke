@@ -39,7 +39,7 @@ function roundTo(x, n) { return +x.toFixed(n); }
 
 function setup() {
   // prepare canvas
-  let cnv = createCanvas(windowWidth, windowHeight-50);
+  let cnv = createCanvas(windowWidth, windowHeight-80);
   cnv.parent("sketch-container");
 
   // prepare to detect pitch
@@ -259,11 +259,11 @@ function showScore(curSongTime) {
 function showTitle() {
   let a = songData.artist;
   let b = songData.title;
-  textSize(opts.fontSizeTitle);
-  fill('white');
-  noStroke();
-  text('"' + b + '" by ' + a, 20, height-1.5*opts.fontSizeTitle);
-  // <div id="audio-controls"></div><br/>
+  // textSize(opts.fontSizeTitle);
+  // fill('white');
+  // noStroke();
+  // text('"' + b + '" by ' + a, 20, height-1.5*opts.fontSizeTitle);
+  $('#song-title').html('"' + b + '" by ' + a);
 }
 
 function draw() {
@@ -374,6 +374,7 @@ function updateSong(songName) {
   $.ajax({
     url: notesUrl,
     dataType: "json",
+    minLength: 0,
     success: function( newSongData ) {
       songData = newSongData;
       console.log(newSongData);
@@ -385,22 +386,29 @@ function updateSong(songName) {
 }
 
 function fetchSongData() {
+  $('#sketch-container').hide();
   $.ajax({
     url: "https://mobeets.github.io/ksdb/songs.json",
     dataType: "json",
     success: function( songNameData ) {
       songList = songNameData;
       console.log(songNameData);
-      $("#songs").autocomplete({
+      // for (var i = 0; i < songList.length; i++) {
+      //   let item = '<li><a href="#' + songList[i].value + '">' + songList[i].label + '</a></li>';
+      //   $('#song-list').append(item);
+      // }
+      $('#songs').autocomplete({
         source: songNameData,
         minLength: 0,
         select: function( event, ui ) {
           if (ui.item) {
+            $('#sketch-container').show();
             console.log(ui.item.label);
             updateSong(ui.item.value);
           }
         }
       });
+      $('#songs').autocomplete('search', '');
     }
   });
 }
