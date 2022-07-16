@@ -5,6 +5,7 @@ let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songData;
 let curSession;
 let curSongKey;
+let mostRecentScore;
 
 let audioEl;
 let songNotes = [];
@@ -16,7 +17,7 @@ let songOffsetMsecs = 0;
 let doDetectPitch = true;
 let showLyricsAboveStaff = true;
 let ignoreOctaveShifts = true; // does nothing yet!
-let updateScoreEvery = 200; // frames
+let fps = 30;
 
 let opts = {
   backgroundColor: '#383636',
@@ -55,6 +56,8 @@ function setup() {
   fft = new p5.FFT();
   fft.setInput(lowPass);
   pitchHistory = new PitchHistory(width/2, opts.pitchHistoryColor);
+
+  frameRate(fps);
 }
 
 function freqToHeight(curFreq) {
@@ -283,17 +286,14 @@ function showScore(curSongTime) {
   text(nHit.toFixed(0 ), width/2, scoreYPos);
   textAlign(LEFT);
 
-  // update most recent score (for logging)
-  if (frameCount % updateScoreEvery === 0) {
-    logScore({
-      'curSession': curSession,
-      'song': curSongKey,
-      'time': curSongTime,
-      'nHit': nHit,
-      'nNotes': nNotes,
-      'meanScoreWhenHit': meanScoreWhenHit,
-    });
-  }
+  mostRecentScore = {
+    'curSession': curSession,
+    'song': curSongKey,
+    'time': curSongTime,
+    'nHit': nHit,
+    'nNotes': nNotes,
+    'meanScoreWhenHit': meanScoreWhenHit,
+  };
 }
 
 function showTitle() {
@@ -378,6 +378,10 @@ function draw() {
   }
   showScore(curSongTime);
   showTitle();
+
+  if (isPaused()) {
+    logScore(mostRecentScore);
+  }
 }
 
 class PitchHistory {
