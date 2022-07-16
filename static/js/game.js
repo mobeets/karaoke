@@ -70,7 +70,7 @@ function freqToHeight(curFreq) {
 function loadSongNotesAndLyrics(audioEl, songData) {
   let bps = songData.bpm/60; // beats per second
   let gap = songData.gap/1000 - songOffsetMsecs/1000; // time in seconds when lyrics start
-  
+
   let ns = songData.notes;
   let songNoteTranspose = songData.note_transpose;
 
@@ -335,9 +335,11 @@ function showMenu() {
     text(curSong.label, xText, curHeight + rectHeight/2);
     if (history[curSong.value] !== undefined) {
       let bestScore = findBestScore(history[curSong.value]);
-      let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
-      fill('green');
-      text(pctHit + '% out of ' + bestScore.nNotes + ' notes', 3*windowWidth/4, curHeight + rectHeight/2);
+      if (bestScore !== undefined) {
+        let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
+        fill('green');
+        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', 3*windowWidth/4, curHeight + rectHeight/2);
+      }
     }
   }
 }
@@ -439,7 +441,7 @@ function mouseClicked() {
       let curHeight = i*rectHeight;
       if ((curMouseY >= curHeight) && (curMouseY < (i+1)*rectHeight)) {
         songSelectionIndex = i;
-        return;
+        updateSong(songList[i].value);
       }
     }
   }
