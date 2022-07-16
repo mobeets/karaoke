@@ -1,4 +1,5 @@
 // let songName = "adele-rolling-in-the-deep";
+let songSelectionIndex = 0;
 let songList;
 let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songData;
@@ -259,15 +260,34 @@ function showScore(curSongTime) {
 function showTitle() {
   let a = songData.artist;
   let b = songData.title;
-  // textSize(opts.fontSizeTitle);
-  // fill('white');
-  // noStroke();
-  // text('"' + b + '" by ' + a, 20, height-1.5*opts.fontSizeTitle);
   $('#song-title').html('"' + b + '" by ' + a);
 }
 
+function drawMenu() {
+  if (songList === undefined) { return; }
+  textSize(opts.fontSizeTitle);
+  textAlign(CENTER);
+  let rectHeight = (windowHeight-80)/songList.length;
+  for (var i = 0; i < songList.length; i++) {
+    let curSong = songList[i];
+    let curHeight = i*rectHeight;
+    if (i === songSelectionIndex) {
+      fill('white');
+      rect(0, curHeight, windowWidth, rectHeight);
+      fill(opts.backgroundColor); noStroke();
+    } else {
+      fill('white'); noStroke();
+    }
+    text(curSong.label, windowWidth/2, curHeight + rectHeight/2);
+  }
+}
+
 function draw() {
-  if (songData === undefined) { return; }
+  if (songData === undefined) {
+    clear();
+    drawMenu();
+    return;
+  }
   background(opts.backgroundColor);
   drawStaffs();
 
@@ -351,8 +371,17 @@ function isPaused() {
 function keyPressed() {
   if (keyCode === 27) { // Esc key
     doDetectPitch = !doDetectPitch;
-  } else if (keyCode === 32) { // spacebar
-    // using this to pause led to double-pausing -> playing
+  } else if ((songData === undefined) && (songList != undefined)) {
+    if (keyCode === 38) { // up arrow
+      songSelectionIndex = (songSelectionIndex-1) % songList.length;
+    } else if (keyCode === 40) { // down arrow
+      songSelectionIndex = (songSelectionIndex+1) % songList.length;
+    } else if ((keyCode === 32) || (keyCode === 13)) { // spacebar or return
+      updateSong(songList[songSelectionIndex].value);
+    }
+    if (songSelectionIndex < 0) {
+      songSelectionIndex = songList.length + songSelectionIndex;
+    }
   }
 }
 
@@ -386,17 +415,13 @@ function updateSong(songName) {
 }
 
 function fetchSongData() {
-  $('#sketch-container').hide();
+  // $('#sketch-container').hide();
   $.ajax({
     url: "https://mobeets.github.io/ksdb/songs.json",
     dataType: "json",
     success: function( songNameData ) {
       songList = songNameData;
       console.log(songNameData);
-      // for (var i = 0; i < songList.length; i++) {
-      //   let item = '<li><a href="#' + songList[i].value + '">' + songList[i].label + '</a></li>';
-      //   $('#song-list').append(item);
-      // }
       $('#songs').autocomplete({
         source: songNameData,
         minLength: 0,
@@ -408,7 +433,7 @@ function fetchSongData() {
           }
         }
       });
-      $('#songs').autocomplete('search', '');
+      // $('#songs').autocomplete('search', '');
     }
   });
 }
