@@ -42,10 +42,9 @@ let opts = {
 
 function roundTo(x, n) { return +x.toFixed(n); }
 
-function setup() {
-  // prepare canvas
-  let cnv = createCanvas(windowWidth, windowHeight-80);
-  cnv.parent("sketch-container");
+function startAudio() {
+  console.log('starting audio...');
+  getAudioContext().resume();
 
   // prepare to detect pitch
   source = new p5.AudioIn();
@@ -56,7 +55,12 @@ function setup() {
   fft = new p5.FFT();
   fft.setInput(lowPass);
   pitchHistory = new PitchHistory(width/2, opts.pitchHistoryColor);
+}
 
+function setup() {
+  // prepare canvas
+  let cnv = createCanvas(windowWidth, windowHeight-80);
+  cnv.parent("sketch-container");
   frameRate(fps);
 }
 
@@ -434,6 +438,9 @@ function isPaused() {
 }
 
 function mouseClicked() {
+  if (source === undefined) {
+    startAudio();
+  }
   if ((songData === undefined) && (songList != undefined)) {
     let curMouseY = mouseY;
     let rectHeight = (windowHeight-80)/songList.length;
@@ -448,6 +455,9 @@ function mouseClicked() {
 }
 
 function keyPressed() {
+  if (source === undefined) {
+    startAudio();
+  }
   if (keyCode === 27) { // Esc key
     doDetectPitch = !doDetectPitch;
   } else if ((songData === undefined) && (songList != undefined)) {
@@ -503,17 +513,17 @@ function fetchSongData() {
     success: function( songNameData ) {
       songList = songNameData;
       console.log(songNameData);
-      $('#songs').autocomplete({
-        source: songNameData,
-        minLength: 0,
-        select: function( event, ui ) {
-          if (ui.item) {
-            $('#sketch-container').show();
-            console.log(ui.item.label);
-            updateSong(ui.item.value);
-          }
-        }
-      });
+      // $('#songs').autocomplete({
+      //   source: songNameData,
+      //   minLength: 0,
+      //   select: function( event, ui ) {
+      //     if (ui.item) {
+      //       $('#sketch-container').show();
+      //       console.log(ui.item.label);
+      //       updateSong(ui.item.value);
+      //     }
+      //   }
+      // });
       // $('#songs').autocomplete('search', '');
     }
   });
