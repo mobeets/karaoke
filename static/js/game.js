@@ -3,6 +3,8 @@ let songSelectionIndex = 0;
 let songList;
 let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songData;
+let curSession;
+let curSongKey;
 
 let audioEl;
 let songNotes = [];
@@ -14,6 +16,7 @@ let songOffsetMsecs = 0;
 let doDetectPitch = true;
 let showLyricsAboveStaff = true;
 let ignoreOctaveShifts = true; // does nothing yet!
+let updateScoreEvery = 200; // frames
 
 let opts = {
   backgroundColor: '#383636',
@@ -204,6 +207,30 @@ function drawStaffs() {
   }
 }
 
+function getScoreHistory() {
+  // load existing history
+  let history = {};
+  if (localStorage.getItem('history') !== null) {
+    history = JSON.parse(localStorage.getItem('history'));
+  }
+  return history;
+}
+
+function logScore(mostRecentScore) {
+  let history = getScoreHistory();
+
+  // save, replacing data from current session if it exists
+  if (history[mostRecentScore.song] === undefined) {
+    history[mostRecentScore.song] = {};
+    history[mostRecentScore.song][mostRecentScore.curSession] = mostRecentScore;
+  } else {
+    history[mostRecentScore.song][mostRecentScore.curSession] = mostRecentScore;
+  }
+
+  // update history
+  localStorage.setItem('history', JSON.stringify(history));
+}
+
 function showScore(curSongTime) {
   let nNotes = 0;
   let nHit = 0;
@@ -255,6 +282,18 @@ function showScore(curSongTime) {
   textAlign(CENTER);
   text(nHit.toFixed(0 ), width/2, scoreYPos);
   textAlign(LEFT);
+
+  // update most recent score (for logging)
+  if (frameCount % updateScoreEvery === 0) {
+    logScore({
+      'curSession': curSession,
+      'song': curSongKey,
+      'time': curSongTime,
+      'nHit': nHit,
+      'nNotes': nNotes,
+      'meanScoreWhenHit': meanScoreWhenHit,
+    });
+  }
 }
 
 function showTitle() {
@@ -263,11 +302,26 @@ function showTitle() {
   $('#song-title').html('"' + b + '" by ' + a);
 }
 
-function drawMenu() {
+function findBestScore(scoreHistory) {
+  let maxNotesCompleted = 0;
+  let bestScore;
+  for (var i = 0; i < Object.values(scoreHistory).length; i++) {
+    let curScore = Object.values(scoreHistory)[i];
+    if (curScore.nNotes > maxNotesCompleted) {
+      maxNotesCompleted = curScore.nNotes;
+      bestScore = curScore;
+    }
+  }
+  return bestScore;
+}
+
+function showMenu() {
   if (songList === undefined) { return; }
   textSize(opts.fontSizeTitle);
-  textAlign(CENTER);
+  textAlign(LEFT);
+  let history = getScoreHistory();
   let rectHeight = (windowHeight-80)/songList.length;
+  let xText = windowWidth/4;
   for (var i = 0; i < songList.length; i++) {
     let curSong = songList[i];
     let curHeight = i*rectHeight;
@@ -278,14 +332,20 @@ function drawMenu() {
     } else {
       fill('white'); noStroke();
     }
-    text(curSong.label, windowWidth/2, curHeight + rectHeight/2);
+    text(curSong.label, xText, curHeight + rectHeight/2);
+    if (history[curSong.value] !== undefined) {
+      let bestScore = findBestScore(history[curSong.value]);
+      let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
+      fill('green');
+      text(pctHit + '% out of ' + bestScore.nNotes + ' notes', 3*windowWidth/4, curHeight + rectHeight/2);
+    }
   }
 }
 
 function draw() {
   if (songData === undefined) {
     clear();
-    drawMenu();
+    showMenu();
     return;
   }
   background(opts.backgroundColor);
@@ -316,7 +376,6 @@ function draw() {
       pitchHistory.update(curSongTime, freq);
     }
   }
-
   showScore(curSongTime);
   showTitle();
 }
@@ -368,6 +427,20 @@ function isPaused() {
   return audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0;
 }
 
+function mouseClicked() {
+  if ((songData === undefined) && (songList != undefined)) {
+    let curMouseY = mouseY;
+    let rectHeight = (windowHeight-80)/songList.length;
+    for (var i = 0; i < songList.length; i++) {
+      let curHeight = i*rectHeight;
+      if ((curMouseY >= curHeight) && (curMouseY < (i+1)*rectHeight)) {
+        songSelectionIndex = i;
+        return;
+      }
+    }
+  }
+}
+
 function keyPressed() {
   if (keyCode === 27) { // Esc key
     doDetectPitch = !doDetectPitch;
@@ -386,6 +459,8 @@ function keyPressed() {
 }
 
 function updateSong(songName) {
+  curSession = Date.now();
+  curSongKey = songName;
   let key = songName;
   let mp3Url = dataUrl + 'mp3/' + key + '.mp3';
   let notesUrl = dataUrl + 'notes/' + key + '.json';
