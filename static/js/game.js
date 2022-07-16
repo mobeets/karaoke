@@ -34,7 +34,6 @@ let opts = {
   errorCentsThresh: 50, // error allowed for a note counting
   fontSizeLyrics: 14, // font size for lyrics
   fontSizeScore: 20, // font size for showing score
-  fontSizeTitle: 14, // font size for song title
   colorHitNote: 'green',
   colorMissedNote: 'red',
   colorLyricsUpcoming: 'white',
@@ -301,6 +300,7 @@ function showScore(curSongTime) {
 }
 
 function showTitle() {
+  textSize(opts.fontSizeTitle);
   let a = songData.artist;
   let b = songData.title;
   $('#song-title').html('"' + b + '" by ' + a);
@@ -321,11 +321,16 @@ function findBestScore(scoreHistory) {
 
 function showMenu() {
   if (songList === undefined) { return; }
-  textSize(opts.fontSizeTitle);
-  textAlign(LEFT);
   let history = getScoreHistory();
   let rectHeight = (windowHeight-80)/songList.length;
-  let xText = windowWidth/4;
+  let xText = 10;
+  textSize(0.3*rectHeight);
+
+  // doing this here like a dummy
+  opts.fontSizeLyrics = 0.3*rectHeight;
+  opts.fontSizeScore = 0.3*rectHeight;
+  opts.fontSizeTitle = 0.3*rectHeight;
+
   for (var i = 0; i < songList.length; i++) {
     let curSong = songList[i];
     let curHeight = i*rectHeight;
@@ -336,13 +341,15 @@ function showMenu() {
     } else {
       fill('white'); noStroke();
     }
+    textAlign(LEFT);
     text(curSong.label, xText, curHeight + rectHeight/2);
     if (history[curSong.value] !== undefined) {
       let bestScore = findBestScore(history[curSong.value]);
       if (bestScore !== undefined) {
         let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
         fill('green');
-        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', 3*windowWidth/4, curHeight + rectHeight/2);
+        textAlign(RIGHT);
+        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', windowWidth-xText, curHeight + rectHeight/2);
       }
     }
   }
@@ -437,7 +444,7 @@ function isPaused() {
   return audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0;
 }
 
-function mouseClicked() {
+function mousePressed() {
   if (source === undefined) {
     startAudio();
   }
