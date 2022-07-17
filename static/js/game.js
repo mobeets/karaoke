@@ -47,7 +47,11 @@ function startAudio() {
 
   // prepare to detect pitch
   source = new p5.AudioIn();
-  source.start();
+  try {
+    source.start();
+  } catch {
+    return;
+  }
   lowPass = new p5.LowPass();
   lowPass.disconnect();
   source.connect(lowPass);
@@ -324,12 +328,12 @@ function showMenu() {
   let history = getScoreHistory();
   let rectHeight = (windowHeight-80)/songList.length;
   let xText = 10;
-  textSize(0.3*rectHeight);
 
+  textSize(0.25*rectHeight);
   // doing this here like a dummy
-  opts.fontSizeLyrics = 0.3*rectHeight;
-  opts.fontSizeScore = 0.3*rectHeight;
-  opts.fontSizeTitle = 0.3*rectHeight;
+  opts.fontSizeLyrics = 0.25*rectHeight;
+  opts.fontSizeScore = 0.25*rectHeight;
+  opts.fontSizeTitle = 0.25*rectHeight;
 
   for (var i = 0; i < songList.length; i++) {
     let curSong = songList[i];
@@ -359,6 +363,12 @@ function draw() {
   if (songData === undefined) {
     clear();
     showMenu();
+    return;
+  }
+  if (source.enabled === false) {
+    background(opts.backgroundColor);
+    textSize(opts.fontSizeScore);
+    text('Sorry, I cannot detect any microphone. Try using a different browser, not on mobile.', 20, windowHeight/2);
     return;
   }
   background(opts.backgroundColor);
