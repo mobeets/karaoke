@@ -368,7 +368,8 @@ function draw() {
   if (source.enabled === false) {
     background(opts.backgroundColor);
     textSize(opts.fontSizeScore);
-    text('Sorry, I cannot detect any microphone. Try using a different browser, not on mobile.', 20, windowHeight/2);
+    text('Please allow mic input to play.', 20, windowHeight/3);
+    text('Or try using a different browser if there are any issues.', 20, 2*windowHeight/3);
     return;
   }
   background(opts.backgroundColor);

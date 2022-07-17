@@ -11,7 +11,7 @@ function startAudio() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
   console.log('setting up...');
-  // getAudioContext().suspend();
+  getAudioContext().suspend();
   let cnv = createCanvas(windowWidth, windowHeight);
   cnv.parent("sketch-container");
 }
