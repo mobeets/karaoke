@@ -6,6 +6,7 @@ let songData;
 let curSession;
 let curSongKey;
 let mostRecentScore;
+let lastNoteCount = 0;
 
 let audioEl;
 let songNotes = [];
@@ -326,6 +327,8 @@ function findBestScore(scoreHistory) {
 function showMenu() {
   if (songList === undefined) { return; }
   let history = getScoreHistory();
+  let noHistory = false;
+  if (Object.keys(history).length === 0) { noHistory = true; }
   let rectHeight = (windowHeight-80)/songList.length;
   let xText = 10;
 
@@ -346,14 +349,15 @@ function showMenu() {
       fill('white'); noStroke();
     }
     textAlign(LEFT);
-    text(curSong.label, xText, curHeight + rectHeight/2);
+    let yOffset = noHistory ? rectHeight/2 : rectHeight/2.5;
+    text(curSong.label, xText, curHeight + yOffset);
     if (history[curSong.value] !== undefined) {
       let bestScore = findBestScore(history[curSong.value]);
       if (bestScore !== undefined) {
         let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
         fill('green');
         textAlign(RIGHT);
-        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', windowWidth-xText, curHeight + rectHeight/2);
+        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', windowWidth-xText, curHeight + 2*rectHeight/2.5);
       }
     }
   }
@@ -374,11 +378,16 @@ function draw() {
   }
   background(opts.backgroundColor);
   drawStaffs();
+  text(frameRate().toFixed(0), 25, 25);
 
   // draw notes if on screen
   let curSongTime = audioEl.time();
+  let timeUntilNextNote = 1000;
   for (let note of songNotes) {
     note.draw(curSongTime, freq);
+    if ((note.startTime  > curSongTime) && ((note.startTime-curSongTime) < timeUntilNextNote)) {
+      timeUntilNextNote = note.startTime-curSongTime;
+    }
   }
 
   // show current time
@@ -403,8 +412,15 @@ function draw() {
   showScore(curSongTime);
   showTitle();
 
-  if (isPaused()) {
-    logScore(mostRecentScore);
+  // save on pause or during gap before next note
+  if (isPaused() || (timeUntilNextNote > 1)) {
+    if (mostRecentScore !== undefined) {
+      if (mostRecentScore.nNotes != lastNoteCount) {
+        console.log('saving...');
+        logScore(mostRecentScore);
+        lastNoteCount = mostRecentScore.nNotes;
+      }
+    }
   }
 }
 
