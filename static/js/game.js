@@ -17,6 +17,7 @@ let doDetectPitch = true;
 let showLyricsAboveStaff = true;
 let ignoreOctaveShifts = true; // does nothing yet!
 let lastNoteCount = 0;
+let lastHighlightTime = -1000;
 let fps = 30;
 
 let opts = {
@@ -32,10 +33,11 @@ let opts = {
   pitchDiameter: 10, // diameter for circle showing pitch being sung
   pitchHistoryColor: '#cdcdcd', // color for circle showing pitch being sung
   errorCentsThresh: 50, // error allowed for a note counting
+  highlightScoreDuration: fps/4,
   fontSizeLyrics: 14, // font size for lyrics
   fontSizeScore: 20, // font size for showing score
-  colorHitNote: 'green',
-  colorMissedNote: 'red',
+  colorHitNote: '#4ab833',
+  colorMissedNote: '#e8514f',
   colorLyricsUpcoming: 'white',
 };
 
@@ -279,6 +281,16 @@ function showScore(curSongTime) {
   let scoreYPos = height - opts.fontSizeScore;
   let scoreHeight = 0.9*(20 + opts.fontSizeScore);
 
+  // if we just got a point, highlight that
+  let fontSizeScore = opts.fontSizeScore;
+  if ((mostRecentScore !== undefined) && (nHit > mostRecentScore.nHit) || ((frameCount - lastHighlightTime) < opts.highlightScoreDuration)) {
+    if (nHit > mostRecentScore.nHit) {
+      lastHighlightTime = frameCount;
+    }
+    fontSizeScore *= 1.5;
+    scoreHeight *= 1.5;
+  }
+
   fill(opts.colorHitNote); noStroke();
   ellipse(width/2, scoreYPos-opts.fontSizeScore/3, scoreHeight, scoreHeight);
 
@@ -299,11 +311,11 @@ function showScore(curSongTime) {
   }
 
   // total score
-  textSize(opts.fontSizeScore);
+  textSize(fontSizeScore);
   fill('white');
   noStroke();
   textAlign(CENTER);
-  text(nHit.toFixed(0 ), width/2, scoreYPos);
+  text(nHit.toFixed(0), width/2, scoreYPos);
   textAlign(LEFT);
 
   mostRecentScore = {
@@ -367,7 +379,11 @@ function showMenu() {
       let bestScore = findBestScore(history[curSong.value]);
       if (bestScore !== undefined) {
         let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
-        fill('green');
+        if (i === songSelectionIndex) {
+          fill('green');
+        } else {
+          fill(opts.colorHitNote);
+        }
         textAlign(RIGHT);
         text(pctHit + '% out of ' + bestScore.nNotes + ' notes', windowWidth-xText, curHeight + 2*rectHeight/2.5);
       }
@@ -390,7 +406,7 @@ function draw() {
   }
   background(opts.backgroundColor);
   drawStaffs();
-  text(frameRate().toFixed(0), 25, 25);
+  text(frameRate().toFixed(0), 25, windowHeight-100);
 
   // draw notes if on screen
   let curSongTime = audioEl.time();
