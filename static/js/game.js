@@ -1,23 +1,22 @@
-// let songName = "adele-rolling-in-the-deep";
-let songSelectionIndex = 0;
-let songList;
 let dataUrl = 'https://mobeets.github.io/ksdb/';
+let songList;
 let songData;
 let curSession;
 let curSongKey;
 let mostRecentScore;
-let lastNoteCount = 0;
 
 let audioEl;
 let songNotes = [];
 let source, fft, lowPass;
 let pitchHistory;
 let freq = 0;
+let songSelectionIndex = 0;
 let songNoteTranspose = 60;
 let songOffsetMsecs = 0;
 let doDetectPitch = true;
 let showLyricsAboveStaff = true;
 let ignoreOctaveShifts = true; // does nothing yet!
+let lastNoteCount = 0;
 let fps = 30;
 
 let opts = {
@@ -95,6 +94,8 @@ function loadSongNotesAndLyrics(audioEl, songData) {
   opts.midiNoteScreenMax = opts.midiNoteStaffMax+2;
 
   // now create notes
+  let lastStartTime = -1000;
+  let lastWordOffset = 0;
   for (var i = 0; i < ns.length; i++) {
     let note = ns[i];
     let noteStartTime = gap + note.time/(4*bps);
@@ -102,19 +103,27 @@ function loadSongNotesAndLyrics(audioEl, songData) {
     let noteFreq = midiToFreq(note.note + songNoteTranspose);
     let noteHeight = freqToHeight(noteFreq);
     let noteDiameter = roundTo(noteHeight - freqToHeight(Math.exp(opts.errorCentsThresh/(100*12) + Math.log(noteFreq))),1);
+    let wordOffset = 0;
+    if ((noteStartTime - lastStartTime < 0.25) && (lastWordOffset === 0)) {
+      // if word is close enough, give it an offset
+      wordOffset = 1;
+    }
 
-    songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter));
+    songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter, wordOffset));
+    lastStartTime = noteStartTime;
+    lastWordOffset = wordOffset;
   }
 }
 
 class Note {
-  constructor(freq, startTime, duration, name, height, diameter) {
+  constructor(freq, startTime, duration, name, height, diameter, wordOffset) {
     this.freq = freq;
     this.startTime = startTime;
     this.duration = duration;
     this.height = height;
     this.name = name;
     this.diameter = diameter;
+    this.wordOffset = wordOffset; // for lyric height
     this.colorDefault = opts.noteColorDefault;
     this.colorActive = opts.noteColorActive;
     this.windowSecs = opts.timePerThousandPixels * (windowWidth/1000); // time on screen before or after
@@ -201,9 +210,12 @@ class Note {
       fill(opts.colorLyricsUpcoming);
     }
     textSize(opts.fontSizeLyrics);
-    let wordHeight = this.height - this.diameter/2; // with note
+    let wordHeight;
     if (showLyricsAboveStaff) {
       wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
+      wordHeight -= this.wordOffset*opts.fontSizeLyrics/1.5;
+    } else { // with note
+      wordHeight = this.height - this.diameter/1.8;
     }
     text(this.name, x1, wordHeight);
   }
@@ -467,6 +479,62 @@ class PitchHistory {
   }
 }
 
+function updateSong(songName) {
+  curSession = Date.now();
+  curSongKey = songName;
+  let key = songName;
+  let mp3Url = dataUrl + 'mp3/' + key + '.mp3';
+  let notesUrl = dataUrl + 'notes/' + key + '.json';
+  console.log([songName, key, mp3Url, notesUrl]);
+
+  // load mp3
+  if (audioEl !== undefined) {
+    audioEl.remove();
+  }
+  audioEl = createAudio(mp3Url);
+  audioEl.parent("audio-controls");
+  audioEl.showControls();
+
+  // load notes
+  $.ajax({
+    url: notesUrl,
+    dataType: "json",
+    minLength: 0,
+    success: function( newSongData ) {
+      songData = newSongData;
+      console.log(newSongData);
+      loadSongNotesAndLyrics(audioEl, newSongData);
+      $('#songs').val('"' + songData.title + '" by ' + songData.artist);
+      $('#song-selector').hide();
+    }
+  });
+}
+
+function fetchSongData() {
+  // $('#sketch-container').hide();
+  $.ajax({
+    url: dataUrl + "songs.json",
+    dataType: "json",
+    success: function( songNameData ) {
+      songList = songNameData;
+      console.log(songNameData);
+      // $('#songs').autocomplete({
+      //   source: songNameData,
+      //   minLength: 0,
+      //   select: function( event, ui ) {
+      //     if (ui.item) {
+      //       $('#sketch-container').show();
+      //       console.log(ui.item.label);
+      //       updateSong(ui.item.value);
+      //     }
+      //   }
+      // });
+      // $('#songs').autocomplete('search', '');
+    }
+  });
+}
+$(document).ready(fetchSongData);
+
 function isPaused() {
   return audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0;
 }
@@ -507,59 +575,3 @@ function keyPressed() {
     }
   }
 }
-
-function updateSong(songName) {
-  curSession = Date.now();
-  curSongKey = songName;
-  let key = songName;
-  let mp3Url = dataUrl + 'mp3/' + key + '.mp3';
-  let notesUrl = dataUrl + 'notes/' + key + '.json';
-  console.log([songName, key, mp3Url, notesUrl]);
-
-  // load mp3
-  if (audioEl !== undefined) {
-    audioEl.remove();
-  }
-  audioEl = createAudio(mp3Url);
-  audioEl.parent("audio-controls");
-  audioEl.showControls();
-
-  // load notes
-  $.ajax({
-    url: notesUrl,
-    dataType: "json",
-    minLength: 0,
-    success: function( newSongData ) {
-      songData = newSongData;
-      console.log(newSongData);
-      loadSongNotesAndLyrics(audioEl, newSongData);
-      $('#songs').val('"' + songData.title + '" by ' + songData.artist);
-      $('#song-selector').hide();
-    }
-  });
-}
-
-function fetchSongData() {
-  // $('#sketch-container').hide();
-  $.ajax({
-    url: "https://mobeets.github.io/ksdb/songs.json",
-    dataType: "json",
-    success: function( songNameData ) {
-      songList = songNameData;
-      console.log(songNameData);
-      // $('#songs').autocomplete({
-      //   source: songNameData,
-      //   minLength: 0,
-      //   select: function( event, ui ) {
-      //     if (ui.item) {
-      //       $('#sketch-container').show();
-      //       console.log(ui.item.label);
-      //       updateSong(ui.item.value);
-      //     }
-      //   }
-      // });
-      // $('#songs').autocomplete('search', '');
-    }
-  });
-}
-$(document).ready(fetchSongData);
