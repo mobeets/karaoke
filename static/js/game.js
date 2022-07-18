@@ -184,8 +184,8 @@ class Note {
   }
 
   draw(curSongTime, freq) {
-    if (this.startTime < curSongTime - this.windowSecs) { return; }
-    if (this.startTime + this.duration > curSongTime + this.windowSecs) { return; }
+    if (this.startTime + this.duration < curSongTime - this.windowSecs) { return; }
+    if (this.startTime > curSongTime + this.windowSecs) { return; }
     let x1 = map(this.startTime, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
     let x2 = map(this.startTime + this.duration, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
 
@@ -406,7 +406,7 @@ function draw() {
   }
   background(opts.backgroundColor);
   drawStaffs();
-  text(frameRate().toFixed(0), 25, windowHeight-100);
+  // text(frameRate().toFixed(0), 25, windowHeight-100);
 
   // draw notes if on screen
   let curSongTime = audioEl.time();
