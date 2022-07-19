@@ -1,6 +1,6 @@
 html, body {
   height: 100%;
-  font-family: 'Droid Serif', Georgia, serif;
+  font-family: 'Helvetica', sans-serif;
 }
 
 body {
@@ -13,7 +13,8 @@ body {
   justify-content: center;
 
   /* This centers our sketch vertically. */
-  align-items: center;
+  /*align-items: center;*/
+  margin-top: 5px;
 }
 a { color: white; }
 a.link, a.visited, a.hover, a.active { color: white; }
@@ -25,6 +26,10 @@ a.link, a.visited, a.hover, a.active { color: white; }
   float: left;
   margin-left: 1em;
   text-align: center;
+}
+
+#instructions {
+  /*font-size: 80%;*/
 }
 
 #wrapper {

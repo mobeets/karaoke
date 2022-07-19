@@ -350,6 +350,8 @@ function findBestScore(scoreHistory) {
 
 function showMenu() {
   if (songList === undefined) { return; }
+  $('#instructions').html('Choose a song.');
+
   let history = getScoreHistory();
   let noHistory = false;
   if (Object.keys(history).length === 0) { noHistory = true; }
@@ -391,6 +393,22 @@ function showMenu() {
   }
 }
 
+function showCountdown(curSongTime) {
+  let firstNote = songNotes[0].startTime;
+  let windowSecs = opts.timePerThousandPixels * (windowWidth/1000);
+  if (curSongTime + windowSecs/2 > firstNote) {
+    $('#instructions').hide();
+    return;
+  }
+  $('#instructions').html('Sing along, scoring <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>.');
+  if (isPaused()) { return; }
+  let wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
+  textSize(opts.fontSizeLyrics);
+  fill('white'); noStroke();
+  textAlign(CENTER);
+  text('' + (firstNote-curSongTime).toFixed(0) + '...', windowWidth/2, wordHeight);
+}
+
 function draw() {
   if (songData === undefined) {
     clear();
@@ -399,17 +417,17 @@ function draw() {
   }
   if (source.enabled === false) {
     background(opts.backgroundColor);
-    textSize(opts.fontSizeScore);
-    text('Please allow mic input to play.', 20, windowHeight/3);
-    text('Or try using a different browser if there are any issues.', 20, 2*windowHeight/3);
+    textSize(0.6*opts.fontSizeScore);
+    textWrap(WORD);
+    text("Please allow mic input to play. Or try a different browser if you're still having issues.", 20, windowHeight/4, 0.9*windowWidth);
     return;
   }
   background(opts.backgroundColor);
   drawStaffs();
+  let curSongTime = audioEl.time();
   // text(frameRate().toFixed(0), 25, windowHeight-100);
 
   // draw notes if on screen
-  let curSongTime = audioEl.time();
   let timeUntilNextNote = 1000;
   for (let note of songNotes) {
     note.draw(curSongTime, freq);
@@ -437,6 +455,8 @@ function draw() {
       pitchHistory.update(curSongTime, freq);
     }
   }
+
+  showCountdown(curSongTime); // early in song
   showScore(curSongTime);
   showTitle();
 
