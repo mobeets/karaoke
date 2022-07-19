@@ -400,7 +400,7 @@ function showCountdown(curSongTime) {
     $('#instructions').hide();
     return;
   }
-  $('#instructions').html('Sing along, scoring <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>.');
+  $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>.');
   if (isPaused()) { return; }
   let wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
   textSize(opts.fontSizeLyrics);
