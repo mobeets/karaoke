@@ -249,6 +249,13 @@ function logScore(mostRecentScore) {
     history[mostRecentScore.song] = {};
     history[mostRecentScore.song][mostRecentScore.curSession] = mostRecentScore;
   } else {
+    let curHistory = history[mostRecentScore.song][mostRecentScore.curSession];
+    if (curHistory.curSession === mostRecentScore.curSession) {
+      if (curHistory.nHit > mostRecentScore.nHit) {
+        // prevent overwriting history from the current session when the current time in the song has been moved earlier than where we have hit notes
+        return;
+      }
+    }
     history[mostRecentScore.song][mostRecentScore.curSession] = mostRecentScore;
   }
 
