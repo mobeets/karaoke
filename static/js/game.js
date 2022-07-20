@@ -5,6 +5,7 @@ let curSession;
 let curSongKey;
 let mostRecentScore;
 
+let maxSongTime = 0;
 let audioEl;
 let songNotes = [];
 let source, fft, lowPass;
@@ -263,18 +264,27 @@ function logScore(mostRecentScore) {
   localStorage.setItem('history', JSON.stringify(history));
 }
 
-function showScore(curSongTime) {
+function showScore(curTime) {
   let nNotes = 0;
   let nHit = 0;
   let sumScore = 0;
   let errWhenHit = 0;
+  
+  // score relative to the max time we've encountered
+  // (to account for manual changes to curSongTime)
+  curTime = max(maxSongTime, curTime);
+
   for (let note of songNotes) {
-    if (note.isPassed(curSongTime)) {
+    if (note.isPassed(curTime)) {
       nNotes += 1;
       if (!isNaN(note.score)) {
         sumScore += note.score;
         if (note.score < opts.errorCentsThresh) {
           errWhenHit += note.scoreSigned;
+        }
+        if (note.startTime > maxSongTime) {
+          // track max time in song encountered
+          maxSongTime = note.startTime;
         }
       }
       nHit += (note.score < opts.errorCentsThresh);
@@ -328,7 +338,7 @@ function showScore(curSongTime) {
   mostRecentScore = {
     'curSession': curSession,
     'song': curSongKey,
-    'time': curSongTime,
+    'time': curTime,
     'nHit': nHit,
     'nNotes': nNotes,
     'meanScoreWhenHit': meanScoreWhenHit,
