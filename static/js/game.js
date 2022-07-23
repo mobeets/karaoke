@@ -166,6 +166,21 @@ class PointMessages {
   }
 }
 
+function median(values){
+  if(values.length === 0) throw new Error("No inputs");
+
+  values.sort(function(a,b){
+    return a-b;
+  });
+
+  var half = Math.floor(values.length / 2);
+  
+  if (values.length % 2)
+    return values[half];
+  
+  return (values[half - 1] + values[half]) / 2.0;
+}
+
 class Note {
   constructor(freq, startTime, duration, name, height, diameter, wordOffset) {
     this.freq = freq;
@@ -180,9 +195,12 @@ class Note {
     this.windowSecs = opts.timePerThousandPixels * (windowWidth/1000); // time on screen before or after
     this.score = NaN; // mean abs error in cents
     this.scoreSigned = NaN; // mean error in cents
+    this.errs = [];
+    this.errsSigned = [];
     this.scoreCount = 0;
     this.hasBeenActive = false;
     this.alerted = false;
+    this.hasBeenFinalized = false;
   }
 
   isUpcoming(curSongTime) {
@@ -210,10 +228,17 @@ class Note {
 
     let curError = this.errorInCents(freq);
     let curScore = curError;
+    this.errs.push(Math.abs(curScore));
+    this.errsSigned.push(curScore);
 
     this.scoreCount += 1;
     this.score = this.score + (Math.abs(curScore) - this.score)/this.scoreCount;
     this.scoreSigned = this.scoreSigned + (curScore - this.scoreSigned)/this.scoreCount;
+  }
+
+  finalizeScore() {
+    this.score = median(this.errs);
+    this.scoreSigned = median(this.errsSigned);
   }
 
   getColor(curSongTime) {
@@ -243,6 +268,9 @@ class Note {
 
     if (this.isActive(curSongTime)) {
       this.updateScore(freq);
+    } else if (this.hasBeenActive && !this.hasBeenFinalized) {
+      this.finalizeScore();
+      this.hasBeenFinalized = true;
     }
     let color = this.getColor(curSongTime);
 
@@ -351,13 +379,13 @@ function showScore(curTime) {
 
   // if we just got a point, highlight that
   let fontSizeScore = opts.fontSizeScore;
-  if ((mostRecentScore !== undefined) && (nHit > mostRecentScore.nHit) || ((frameCount - lastHighlightTime) < opts.highlightScoreDuration)) {
-    if (nHit > mostRecentScore.nHit) {
-      lastHighlightTime = frameCount;
-    }
-    fontSizeScore *= 1.5;
-    scoreHeight *= 1.5;
-  }
+  // if ((mostRecentScore !== undefined) && (nHit > mostRecentScore.nHit) || ((frameCount - lastHighlightTime) < opts.highlightScoreDuration)) {
+  //   if (nHit > mostRecentScore.nHit) {
+  //     lastHighlightTime = frameCount;
+  //   }
+  //   fontSizeScore *= 1.5;
+  //   scoreHeight *= 1.5;
+  // }
 
   fill(opts.colorHitNote); noStroke();
   ellipse(width/2, scoreYPos-opts.fontSizeScore/3, scoreHeight, scoreHeight);
@@ -404,6 +432,23 @@ function showTitle() {
   $('#song-title').html('"' + b + '" by ' + a);
 }
 
+function showScoreCard() {
+
+  let nHit = mostRecentScore.nHit;
+  let totalNotes = mostRecentScore.totalNotes;
+  let pctHit = 100*(nHit/totalNotes);
+
+  fill(opts.colorHitNote); noStroke();
+  ellipse(width/2, height/2, 0.5*min(width, height));
+  fill('white');
+  textAlign(CENTER, CENTER);
+  textSize(opts.fontSizeLyrics);
+  text('Final score', width/2, height/2 - 0.2*min(width, height));
+  text('of ' + totalNotes + ' (' + pctHit.toFixed(0) + '%)', width/2, height/2 + 0.2*min(width, height));
+  textSize(0.25*min(width, height));
+  text(nHit.toFixed(0), width/2, height/2);
+}
+
 function findBestScore(scoreHistory) {
   let maxNotesHit = 0;
   let bestScore;
@@ -417,21 +462,34 @@ function findBestScore(scoreHistory) {
   return bestScore;
 }
 
-function showScoreCard() {
-
-  let nHit = mostRecentScore.nHit;
-  let totalNotes = mostRecentScore.totalNotes;
-  let pctHit = 100*(nHit/totalNotes);
-
-  fill(opts.colorHitNote); noStroke();
-  ellipse(width/2, height/2, 0.5*min(width, height));
-  fill('white');
-  textAlign(CENTER, CENTER);
-  textSize(opts.fontSizeLyrics);
-  text('Final score', width/2, height/2 - 0.2*min(width, height));
-  text('of ' + totalNotes + ' (' + pctHit + '%)', width/2, height/2 + 0.2*min(width, height));
-  textSize(0.25*min(width, height));
-  text(nHit.toFixed(0), width/2, height/2);
+function showScoreMatrix(scoreHistory, x, y, w, h) {
+  let rows = [];
+  for (var i = 0; i < Object.values(scoreHistory).length; i++) {
+    let curScore = Object.values(scoreHistory)[i];
+    if (curScore.totalNotes !== undefined) {
+      let row = [curScore.nHit, curScore.nNotes, curScore.totalNotes];
+      if (curScore.nNotes/curScore.totalNotes > 0.1) {
+        rows.push(row);
+      }
+    }
+  }
+  
+  let xPad = 3;
+  let maxShown = Math.floor(w/xPad);
+  let nSkip = max(0, rows.length - maxShown);
+  // console.log([w, maxShown, rows.length, nSkip]);
+  for (var i = nSkip; i < rows.length; i++) {
+    let nHit = rows[i][0];
+    let nNotes = rows[i][1];
+    let N = rows[i][2];
+    let cx = x + (i-nSkip)*xPad;
+    let cy = y;
+    strokeWeight(1); stroke(opts.noteColorDefault);
+    line(cx, cy + h, cx, cy + h - (nNotes/N)*h);
+    strokeWeight(1); stroke(opts.colorHitNote);
+    line(cx, cy + h, cx, cy + h - (nHit/N)*h);
+  }
+  strokeWeight(1);
 }
 
 function showMenu() {
@@ -464,7 +522,7 @@ function showMenu() {
       songSelectionIndex = i;
     }
     if (i === songSelectionIndex) {
-      fill('white');
+      fill('white'); noStroke();
       rect(0, curHeight, windowWidth, rectHeight);
       fill(opts.backgroundColor); noStroke();
     } else {
@@ -484,6 +542,9 @@ function showMenu() {
         }
         textAlign(RIGHT);
         text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-1.5*xText, curHeight + 2*rectHeight/2.5);
+        if (width > 300) {
+          showScoreMatrix(history[curSong.value], windowWidth/2, curHeight, 200, rectHeight-5);
+        }
       }
     }
   }
