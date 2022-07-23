@@ -468,12 +468,14 @@ function showScoreMatrix(scoreHistory, x, y, w, h) {
     let curScore = Object.values(scoreHistory)[i];
     if (curScore.totalNotes !== undefined) {
       let row = [curScore.nHit, curScore.nNotes, curScore.totalNotes];
-      if (curScore.nNotes/curScore.totalNotes > 0.1) {
+      if ((curScore.nNotes/curScore.totalNotes > 0.1) && (curScore.nHit > 0)) {
         rows.push(row);
       }
     }
   }
   
+  // if (rows.length < 2) { return; }
+
   let xPad = 3;
   let maxShown = Math.floor(w/xPad);
   let nSkip = max(0, rows.length - maxShown);
@@ -484,8 +486,8 @@ function showScoreMatrix(scoreHistory, x, y, w, h) {
     let N = rows[i][2];
     let cx = x + (i-nSkip)*xPad;
     let cy = y;
-    strokeWeight(1); stroke(opts.noteColorDefault);
-    line(cx, cy + h, cx, cy + h - (nNotes/N)*h);
+    // strokeWeight(1); stroke(opts.noteColorDefault);
+    // line(cx, cy + h, cx, cy + h - (nNotes/N)*h);
     strokeWeight(1); stroke(opts.colorHitNote);
     line(cx, cy + h, cx, cy + h - (nHit/N)*h);
   }
@@ -543,7 +545,7 @@ function showMenu() {
         textAlign(RIGHT);
         text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-1.5*xText, curHeight + 2*rectHeight/2.5);
         if (width > 300) {
-          showScoreMatrix(history[curSong.value], windowWidth/2, curHeight, 200, rectHeight-5);
+          showScoreMatrix(history[curSong.value], windowWidth/3, curHeight + 0.5*rectHeight, windowWidth/3, 0.5*rectHeight-5);
         }
       }
     }
