@@ -10,6 +10,7 @@ let audioEl;
 let songNotes = [];
 let source, fft, lowPass;
 let pitchHistory;
+let pointMessages;
 let freq = 0;
 let songSelectionIndex = 0;
 let songNoteTranspose = 60;
@@ -61,6 +62,7 @@ function startAudio() {
   fft = new p5.FFT();
   fft.setInput(lowPass);
   pitchHistory = new PitchHistory(width/2, opts.pitchHistoryColor);
+  pointMessages = new PointMessages();
 }
 
 function setup() {
@@ -118,6 +120,50 @@ function loadSongNotesAndLyrics(audioEl, songData) {
   }
 }
 
+class PointMessages {
+  constructor() {
+    this.queue = [];
+  }
+
+  add(msg, x1, y1, x2, y2, color, duration, textSize) {
+    let curPoint = {
+      msg: msg,
+      x1: x1,
+      y1: y1,
+      x2: x2,
+      y2: y2,
+      color: color,
+      duration: duration,
+      textSize: textSize,
+      t: 0,
+    };
+    this.queue.push(curPoint);
+  }
+
+  update() {
+    let newQueue = [];
+    for (var i = 0; i < this.queue.length; i++) {
+      this.queue[i].t += 1;
+      if (this.queue[i].t < this.queue[i].duration) {
+        newQueue.push(this.queue[i]);
+      }
+    }
+    this.queue = newQueue;
+  }
+
+  draw() {
+    for (var i = 0; i < this.queue.length; i++) {
+      let cp = this.queue[i];
+      textSize(cp.textSize);
+      fill(cp.color); noStroke();
+      let t = cp.t / cp.duration;
+      let x = cp.x1 + t*(cp.x2 - cp.x1);
+      let y = cp.y1 + t*(cp.y2 - cp.y1);
+      text(cp.msg, x, y);
+    }
+  }
+}
+
 class Note {
   constructor(freq, startTime, duration, name, height, diameter, wordOffset) {
     this.freq = freq;
@@ -133,6 +179,8 @@ class Note {
     this.score = NaN; // mean abs error in cents
     this.scoreSigned = NaN; // mean error in cents
     this.scoreCount = 0;
+    this.hasBeenActive = false;
+    this.alerted = false;
   }
 
   isUpcoming(curSongTime) {
@@ -155,6 +203,7 @@ class Note {
     if (isNaN(this.score)) {
       this.score = 0;
       this.scoreSigned = 0;
+      this.hasBeenActive = true;
     }
 
     let curError = this.errorInCents(freq);
@@ -354,16 +403,33 @@ function showTitle() {
 }
 
 function findBestScore(scoreHistory) {
-  let maxNotesCompleted = 0;
+  let maxNotesHit = 0;
   let bestScore;
   for (var i = 0; i < Object.values(scoreHistory).length; i++) {
     let curScore = Object.values(scoreHistory)[i];
-    if ((curScore.totalNotes !== undefined) && (curScore.nNotes > maxNotesCompleted)) {
-      maxNotesCompleted = curScore.nNotes;
+    if ((curScore.totalNotes !== undefined) && (curScore.nHit > maxNotesHit)) {
+      maxNotesHit = curScore.nHit;
       bestScore = curScore;
     }
   }
   return bestScore;
+}
+
+function showScoreCard() {
+
+  let nHit = mostRecentScore.nHit;
+  let totalNotes = mostRecentScore.totalNotes;
+  let pctHit = 100*(nHit/totalNotes);
+
+  fill(opts.colorHitNote); noStroke();
+  ellipse(width/2, height/2, 0.5*width);
+  fill('white');
+  textAlign(CENTER, CENTER);
+  textSize(opts.fontSizeLyrics);
+  text('Final score', width/2, height/2 - 0.2*width);
+  text('of ' + totalNotes + ' (' + pctHit + '%)', width/2, height/2 + 0.2*width);
+  textSize(0.25*width);
+  text(nHit.toFixed(0), width/2, height/2);
 }
 
 function showMenu() {
@@ -460,34 +526,49 @@ function draw() {
     if ((note.startTime  > curSongTime) && ((note.startTime-curSongTime) < timeUntilNextNote)) {
       timeUntilNextNote = note.startTime-curSongTime;
     }
-  }
-
-  // show current time
-  stroke('white');
-  strokeWeight(1);
-
-  let y1 = freqToHeight(midiToFreq(opts.midiNoteStaffMin));
-  let y2 = freqToHeight(midiToFreq(opts.midiNoteStaffMax));
-  line(width/2, y1, width/2, y2);
-
-  // show pitch being sung
-  if (doDetectPitch) {
-    pitchHistory.draw(curSongTime);
-    freq = detectPitch(fft);
-    let freqHeight = freqToHeight(freq);
-    noStroke(); fill(opts.pitchColor);
-    ellipse(width/2, freqHeight, opts.pitchDiameter);
-    if (!isPaused()) {
-      pitchHistory.update(curSongTime, freq);
+    if (note.isPassed(curSongTime) && note.hasBeenActive && !note.alerted) {
+      if (note.score <= opts.errorCentsThresh) {
+        pointMessages.add("+1", width/2 - 2*opts.fontSizeScore, note.height, width/2 - 2*opts.fontSizeScore, note.height - 20, opts.colorHitNote, 0.5*fps, opts.fontSizeScore);
+      }
+      note.alerted = true;
     }
   }
 
-  showCountdown(curSongTime); // early in song
-  showScore(curSongTime);
+  // update and messages
+  pointMessages.update();
+  pointMessages.draw();
+
+  let pastLastNote = curSongTime > songNotes[songNotes.length-1].startTime + songNotes[songNotes.length-1].duration;
+  if (pastLastNote) {
+    showScoreCard();
+  } else {
+
+    // draw line showing current time
+    stroke('white');
+    strokeWeight(1);
+    let y1 = freqToHeight(midiToFreq(opts.midiNoteStaffMin));
+    let y2 = freqToHeight(midiToFreq(opts.midiNoteStaffMax));
+    line(width/2, y1, width/2, y2);
+    
+    // show pitch being sung
+    if (doDetectPitch) {
+      pitchHistory.draw(curSongTime);
+      freq = detectPitch(fft);
+      let freqHeight = freqToHeight(freq);
+      noStroke(); fill(opts.pitchColor);
+      ellipse(width/2, freqHeight, opts.pitchDiameter);
+      if (!isPaused()) {
+        pitchHistory.update(curSongTime, freq);
+      }
+    }
+    showCountdown(curSongTime); // early in song
+    showScore(curSongTime);
+  }
+
   showTitle();
 
   // save on pause or during gap before next note
-  if (isPaused() || (timeUntilNextNote > 1)) {
+  if (pastLastNote || isPaused() || (timeUntilNextNote > 1)) {
     if (mostRecentScore !== undefined) {
       if (mostRecentScore.nNotes != lastNoteCount) {
         console.log('saving...');
