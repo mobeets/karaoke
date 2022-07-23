@@ -458,6 +458,9 @@ function showMenu() {
   for (var i = 0; i < songList.length; i++) {
     let curSong = songList[i];
     let curHeight = i*rectHeight;
+    if ((mouseY >= curHeight) && (mouseY < curHeight+rectHeight)) {
+      songSelectionIndex = i;
+    }
     if (i === songSelectionIndex) {
       fill('white');
       rect(0, curHeight, windowWidth, rectHeight);
