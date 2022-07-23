@@ -378,7 +378,7 @@ function showMenu() {
   let xText = 10;
   if (!noHistory) {
     $('#score-title').html('Best score');
-    $('#score-title').css('font-size', 0.25*rectHeight);
+    $('#score-title').css('font-size', 0.2*rectHeight);
   }
   $('#instructions').html('Choose a song.');
   $('#instructions').css('font-size', 0.2*rectHeight);
@@ -412,7 +412,7 @@ function showMenu() {
           fill(opts.colorHitNote);
         }
         textAlign(RIGHT);
-        text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-2.5*xText, curHeight + 2*rectHeight/2.5);
+        text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-1.5*xText, curHeight + 2*rectHeight/2.5);
       }
     }
   }

@@ -35,8 +35,9 @@ a.link, a.visited, a.hover, a.active { color: white; }
 }
 #score-title {
   float: left;
-  width: 19%;
+  width: 18%;
   color: #4ab833;
+  text-align: right;
 }
 
 #wrapper {
