@@ -5,6 +5,8 @@ let curSession;
 let curSongKey;
 let mostRecentScore;
 
+let hasBeenPlayed = false;
+let hasBeenWarned = false;
 let maxSongTime = 0;
 let audioEl;
 let songNotes = [];
@@ -422,13 +424,13 @@ function showScoreCard() {
   let pctHit = 100*(nHit/totalNotes);
 
   fill(opts.colorHitNote); noStroke();
-  ellipse(width/2, height/2, 0.5*width);
+  ellipse(width/2, height/2, 0.5*min(width, height));
   fill('white');
   textAlign(CENTER, CENTER);
   textSize(opts.fontSizeLyrics);
-  text('Final score', width/2, height/2 - 0.2*width);
-  text('of ' + totalNotes + ' (' + pctHit + '%)', width/2, height/2 + 0.2*width);
-  textSize(0.25*width);
+  text('Final score', width/2, height/2 - 0.2*min(width, height));
+  text('of ' + totalNotes + ' (' + pctHit + '%)', width/2, height/2 + 0.2*min(width, height));
+  textSize(0.25*min(width, height));
   text(nHit.toFixed(0), width/2, height/2);
 }
 
@@ -519,7 +521,16 @@ function draw() {
   }
   background(opts.backgroundColor);
   drawStaffs();
+  if (!hasBeenPlayed && !isPaused()) {
+    hasBeenPlayed = true;
+  }
   let curSongTime = audioEl.time();
+  if (!hasBeenPlayed && curSongTime > 0) {
+    if (!hasBeenWarned) {
+      alert('Sorry, changing the song time before pressing play sometimes causes errors. Try refreshing if you have any issues.');
+      hasBeenWarned = true;
+    }
+  }
   // text(frameRate().toFixed(0), 25, windowHeight-100);
 
   // draw notes if on screen
