@@ -30,6 +30,13 @@ a.link, a.visited, a.hover, a.active { color: white; }
 
 #instructions {
   /*font-size: 80%;*/
+  width: 80%;
+  float: left;
+}
+#score-title {
+  float: left;
+  width: 19%;
+  color: #4ab833;
 }
 
 #wrapper {

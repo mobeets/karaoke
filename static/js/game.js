@@ -251,7 +251,7 @@ function logScore(mostRecentScore) {
     history[mostRecentScore.song][mostRecentScore.curSession] = mostRecentScore;
   } else {
     let curHistory = history[mostRecentScore.song][mostRecentScore.curSession];
-    if (curHistory.curSession === mostRecentScore.curSession) {
+    if (curHistory != undefined && (curHistory.curSession === mostRecentScore.curSession)) {
       if (curHistory.nHit > mostRecentScore.nHit) {
         // prevent overwriting history from the current session when the current time in the song has been moved earlier than where we have hit notes
         return;
@@ -342,6 +342,7 @@ function showScore(curTime) {
     'nHit': nHit,
     'nNotes': nNotes,
     'meanScoreWhenHit': meanScoreWhenHit,
+    'totalNotes': songNotes.length,
   };
 }
 
@@ -357,7 +358,7 @@ function findBestScore(scoreHistory) {
   let bestScore;
   for (var i = 0; i < Object.values(scoreHistory).length; i++) {
     let curScore = Object.values(scoreHistory)[i];
-    if (curScore.nNotes > maxNotesCompleted) {
+    if ((curScore.totalNotes !== undefined) && (curScore.nNotes > maxNotesCompleted)) {
       maxNotesCompleted = curScore.nNotes;
       bestScore = curScore;
     }
@@ -366,14 +367,21 @@ function findBestScore(scoreHistory) {
 }
 
 function showMenu() {
-  if (songList === undefined) { return; }
-  $('#instructions').html('Choose a song.');
+  if (songList === undefined) {
+    return;
+  }
 
   let history = getScoreHistory();
   let noHistory = false;
   if (Object.keys(history).length === 0) { noHistory = true; }
   let rectHeight = (windowHeight-80)/songList.length;
   let xText = 10;
+  if (!noHistory) {
+    $('#score-title').html('Best score');
+    $('#score-title').css('font-size', 0.25*rectHeight);
+  }
+  $('#instructions').html('Choose a song.');
+  $('#instructions').css('font-size', 0.2*rectHeight);
 
   textSize(0.25*rectHeight);
   // doing this here like a dummy
@@ -397,14 +405,14 @@ function showMenu() {
     if (history[curSong.value] !== undefined) {
       let bestScore = findBestScore(history[curSong.value]);
       if (bestScore !== undefined) {
-        let pctHit = (100*bestScore.nHit/bestScore.nNotes).toFixed(0);
+        let pctHit = (100*bestScore.nHit/bestScore.totalNotes).toFixed(0);
         if (i === songSelectionIndex) {
           fill('green');
         } else {
           fill(opts.colorHitNote);
         }
         textAlign(RIGHT);
-        text(pctHit + '% out of ' + bestScore.nNotes + ' notes', windowWidth-xText, curHeight + 2*rectHeight/2.5);
+        text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-2.5*xText, curHeight + 2*rectHeight/2.5);
       }
     }
   }
@@ -432,6 +440,7 @@ function draw() {
     showMenu();
     return;
   }
+  $('#score-title').hide();
   if (source.enabled === false) {
     background(opts.backgroundColor);
     textSize(0.6*opts.fontSizeScore);
