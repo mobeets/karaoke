@@ -100,9 +100,13 @@ function loadSongNotesAndLyrics(audioEl, songData) {
   opts.midiNoteScreenMin = opts.midiNoteStaffMin-2;
   opts.midiNoteScreenMax = opts.midiNoteStaffMax+2;
 
+  textSize(opts.fontSizeLyrics); // for checking width
+
   // now create notes
   let lastStartTime = -1000;
+  let lastWordWidth = 0;
   let lastWordOffset = 0;
+  let windowSecs = opts.timePerThousandPixels * (width/1000);
   for (var i = 0; i < ns.length; i++) {
     let note = ns[i];
     let noteStartTime = gap + note.time/(4*bps);
@@ -111,13 +115,21 @@ function loadSongNotesAndLyrics(audioEl, songData) {
     let noteHeight = freqToHeight(noteFreq);
     let noteDiameter = roundTo(noteHeight - freqToHeight(Math.exp(opts.errorCentsThresh/(100*12) + Math.log(noteFreq))),1);
     let wordOffset = 0;
-    if ((noteStartTime - lastStartTime < 0.25) && (lastWordOffset === 0)) {
+    
+    let x1 = map(lastStartTime, -windowSecs, windowSecs, 0, width);
+    let x2 = map(noteStartTime, -windowSecs, windowSecs, 0, width);
+
+    // if ((lastStartTime + 0.25 > noteStartTime) && (lastWordOffset === 0)) {
+    if ((lastWordWidth > x2-x1) && (lastWordOffset === 0)) {
       // if word is close enough, give it an offset
       wordOffset = 1;
+      // for this "if" we should instead be using textWidth to know whether they will overlap
+      // basically swap the times above to pixels, and then replace 0.25 with lastWordWidth
     }
 
     songNotes.push(new Note(noteFreq, noteStartTime, noteDuration, note.name, noteHeight, noteDiameter, wordOffset));
     lastStartTime = noteStartTime;
+    lastWordWidth = textWidth(note.name);
     lastWordOffset = wordOffset;
   }
 }
@@ -292,6 +304,9 @@ class Note {
       fill(opts.colorLyricsUpcoming);
     }
     textSize(opts.fontSizeLyrics);
+    // let wl = textWidth(this.name);
+    // rect(x1, this.height, wl, 10);
+
     let wordHeight;
     if (showLyricsAboveStaff) {
       wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
