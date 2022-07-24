@@ -587,7 +587,9 @@ function showCountdown(curSongTime) {
     $('#instructions').hide();
     return;
   }
-  $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>. Drag to change the time.');
+  if (isPaused()) {
+    $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>. Drag to change the time.');
+  }
   if (isPaused()) { return; }
   let wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
   textSize(opts.fontSizeLyrics);
