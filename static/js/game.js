@@ -31,7 +31,7 @@ let opts = {
   midiNoteScreenMin: 50, // lowest note in range of screen
   midiNoteScreenMax: 80, // highest note in range of screen
   timePerThousandPixels: 3, // time (in seconds) shown on screen before/after
-  noteColorDefault: '#898989', // default color for lyrics
+  noteColorDefault: '#cdcdcd', // default color for lyrics
   noteColorActive: 'white', // color for active lyric
   pitchColor: 'white', // color for circle showing pitch being sung
   pitchDiameter: 10, // diameter for circle showing pitch being sung
@@ -41,7 +41,7 @@ let opts = {
   fontSizeLyrics: 14, // font size for lyrics
   fontSizeScore: 20, // font size for showing score
   colorHitNote: '#4ab833',
-  colorMissedNote: '#e8514f',
+  colorMissedNote: '#787878', // '#e8514f',
   colorLyricsUpcoming: 'white',
 };
 
@@ -468,7 +468,7 @@ function showScoreMatrix(scoreHistory, x, y, w, h) {
     let curScore = Object.values(scoreHistory)[i];
     if (curScore.totalNotes !== undefined) {
       let row = [curScore.nHit, curScore.nNotes, curScore.totalNotes];
-      if ((curScore.nNotes/curScore.totalNotes > 0.1) && (curScore.nHit > 0)) {
+      if ((curScore.nNotes/curScore.totalNotes > 0.05) && (curScore.nHit > 0)) {
         rows.push(row);
       }
     }
@@ -545,7 +545,7 @@ function showMenu() {
         textAlign(RIGHT);
         text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-1.5*xText, curHeight + 2*rectHeight/2.5);
         if (width > 300) {
-          showScoreMatrix(history[curSong.value], windowWidth/3, curHeight + 0.5*rectHeight, windowWidth/3, 0.5*rectHeight-5);
+          showScoreMatrix(history[curSong.value], windowWidth/3, curHeight, windowWidth/3, rectHeight-5);
         }
       }
     }
