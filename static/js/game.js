@@ -4,6 +4,9 @@ let songData;
 let curSession;
 let curSongKey;
 let mostRecentScore;
+let queryString;
+let urlParams;
+let isDebugMode = false;
 
 let mousePressedX, mousePressedTime;
 let hasBeenPlayed = false;
@@ -76,6 +79,10 @@ function setup() {
   let cnv = createCanvas(windowWidth, windowHeight-80);
   cnv.parent("sketch-container");
   frameRate(fps);
+
+  queryString = window.location.search;
+  urlParams = new URLSearchParams(queryString);
+  isDebugMode = urlParams.has('debug');
 }
 
 function freqToHeight(curFreq) {
@@ -652,11 +659,16 @@ function draw() {
     if (doDetectPitch) {
       pitchHistory.draw(curSongTime);
       
-      let t1 = window.performance.now();
+      let t1;
+      if (isDebugMode) {
+        t1 = window.performance.now();
+      }
       freq = detectPitch(fft, opts);
-      let t2 = window.performance.now();
-      fill('white'); noStroke();
-      text((t2-t1).toFixed(0), 100, 100);
+      if (isDebugMode) {
+        let t2 = window.performance.now();
+        fill('white'); noStroke();
+        text((t2-t1).toFixed(0), 100, 100);
+      }
 
       let freqHeight = freqToHeight(freq);
       noStroke(); fill(opts.pitchColor);
