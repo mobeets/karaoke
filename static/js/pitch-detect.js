@@ -1,12 +1,12 @@
 
-function detectPitch(fft) {
+function detectPitch(fft, opts) {
   var timeDomain = fft.waveform(1024, 'float32');
-  var corrBuff = autoCorrelate(timeDomain);
+  var corrBuff = autoCorrelate(timeDomain, opts);
   return findFrequency(corrBuff);
 }
 
 // accepts a timeDomainBuffer and multiplies every value
-function autoCorrelate(timeDomainBuffer) {
+function autoCorrelate(timeDomainBuffer, opts) {
   
   var nSamples = timeDomainBuffer.length;
 

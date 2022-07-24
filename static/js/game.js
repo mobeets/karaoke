@@ -44,6 +44,9 @@ let opts = {
   colorHitNote: '#4ab833',
   colorMissedNote: '#787878', // '#e8514f',
   colorLyricsUpcoming: 'white',
+  preNormalize: true,
+  doCenterClip: true,
+  postNormalize: true,
 };
 
 function roundTo(x, n) { return +x.toFixed(n); }
@@ -648,7 +651,13 @@ function draw() {
     // show pitch being sung
     if (doDetectPitch) {
       pitchHistory.draw(curSongTime);
-      freq = detectPitch(fft);
+      
+      let t1 = window.performance.now();
+      freq = detectPitch(fft, opts);
+      let t2 = window.performance.now();
+      fill('white'); noStroke();
+      text((t2-t1).toFixed(0), 100, 100);
+
       let freqHeight = freqToHeight(freq);
       noStroke(); fill(opts.pitchColor);
       ellipse(width/2, freqHeight, opts.pitchDiameter);
@@ -792,7 +801,6 @@ function mousePressed() {
       }
     }
   } else if (songData != undefined && audioEl != undefined && mouseY < windowHeight-80 && hasBeenPlayed) {
-    console.log([mouseX, mouseY, windowWidth, windowHeight]);
     mousePressedX = mouseX;
     mousePressedTime = audioEl.time();
   }
