@@ -5,6 +5,7 @@ let curSession;
 let curSongKey;
 let mostRecentScore;
 
+let mousePressedX, mousePressedTime;
 let hasBeenPlayed = false;
 let hasBeenWarned = false;
 let maxSongTime = 0;
@@ -279,7 +280,9 @@ class Note {
     let x2 = map(this.startTime + this.duration, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
 
     if (this.isActive(curSongTime)) {
-      this.updateScore(freq);
+      if (!isPaused()) {
+        this.updateScore(freq);
+      }
     } else if (this.hasBeenActive && !this.hasBeenFinalized) {
       this.finalizeScore();
       this.hasBeenFinalized = true;
@@ -788,7 +791,23 @@ function mousePressed() {
         updateSong(songList[i].value);
       }
     }
+  } else if (songData != undefined && audioEl != undefined && mouseY < windowHeight-80 && hasBeenPlayed) {
+    console.log([mouseX, mouseY, windowWidth, windowHeight]);
+    mousePressedX = mouseX;
+    mousePressedTime = audioEl.time();
   }
+}
+
+function mouseDragged() {
+  if (audioEl != undefined && mousePressedX != undefined) {
+    let deltaTime = (mousePressedX - mouseX)/25;
+    audioEl.time(constrain(mousePressedTime + deltaTime, 0, audioEl.duration()));
+  }
+}
+
+function mouseReleased() {
+  mousePressedX = undefined;
+  mousePressedTime = undefined;
 }
 
 function keyPressed() {
