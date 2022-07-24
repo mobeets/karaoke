@@ -71,7 +71,8 @@ function centerClip(buffer) {
   var nSamples = buffer.length;
 
   // center clip removes any samples whose abs is less than centerClipThreshold
-  centerClipThreshold = map(mouseY, 0, height, 0, 1);
+  // centerClipThreshold = map(mouseY, 0, height, 0, 1);
+  centerClipThreshold = 0.1;
 
   if (centerClipThreshold > 0.0) {
     for (var i = 0; i < nSamples; i++) {

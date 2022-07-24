@@ -290,7 +290,7 @@ class Note {
     let x2 = map(this.startTime + this.duration, curSongTime - this.windowSecs, curSongTime + this.windowSecs, 0, width);
 
     if (this.isActive(curSongTime)) {
-      if (!isPaused()) {
+      if (!isPaused() && freq > 0) {
         this.updateScore(freq);
       }
     } else if (this.hasBeenActive && !this.hasBeenFinalized) {
@@ -587,7 +587,7 @@ function showCountdown(curSongTime) {
     $('#instructions').hide();
     return;
   }
-  $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>.');
+  $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>. Drag to change the time.');
   if (isPaused()) { return; }
   let wordHeight = freqToHeight(midiToFreq(opts.midiNoteStaffMax)) - opts.fontSizeLyrics/2;
   textSize(opts.fontSizeLyrics);
@@ -602,6 +602,7 @@ function draw() {
     showMenu();
     return;
   }
+  $('#instructions').css('width', '100%');
   $('#score-title').hide();
   if (source.enabled === false) {
     background(opts.backgroundColor);
@@ -618,7 +619,7 @@ function draw() {
   let curSongTime = audioEl.time();
   if (!hasBeenPlayed && curSongTime > 0) {
     if (!hasBeenWarned) {
-      alert('Sorry, changing the song time before pressing play sometimes causes errors. Try refreshing if you have any issues.');
+      // alert('Sorry, changing the song time before pressing play sometimes causes errors. Try refreshing if you have any issues.');
       hasBeenWarned = true;
     }
   }
@@ -670,11 +671,13 @@ function draw() {
         text((t2-t1).toFixed(0), 100, 100);
       }
 
-      let freqHeight = freqToHeight(freq);
-      noStroke(); fill(opts.pitchColor);
-      ellipse(width/2, freqHeight, opts.pitchDiameter);
-      if (!isPaused()) {
-        pitchHistory.update(curSongTime, freq);
+      if (freq >= 0) {
+        let freqHeight = freqToHeight(freq);
+        noStroke(); fill(opts.pitchColor);
+        ellipse(width/2, freqHeight, opts.pitchDiameter);
+        if (!isPaused()) {
+          pitchHistory.update(curSongTime, freq);
+        }
       }
     }
     showCountdown(curSongTime); // early in song
