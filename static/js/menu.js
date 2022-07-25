@@ -53,7 +53,7 @@ function displaySongs(songNameData) {
   let noHistory = (Object.keys(history).length === 0);
 
   for (var i = 0; i < songList.length; i++) {
-    let citem = '<li class="li-item" value="' + songList[i].value + '">';
+    let citem = '<li class="li-item" data-value="' + songList[i].value + '">';
     citem += '<a class="song-name">' + songList[i].label + '</a>';
 
     let cscore = renderBestScore(history[songList[i].value]);
@@ -62,6 +62,7 @@ function displaySongs(songNameData) {
   }
   
   $('#song-search').on('input', filterSongs);
+  $('.li-item').click(chooseSong); // link to game2.js
 }
 
 function fetchSongData() {
@@ -74,6 +75,7 @@ function fetchSongData() {
 
 function init() {
   fetchSongData();
+  $('#game').hide();
 }
 
 $(document).ready(init);
