@@ -1,0 +1,73 @@
+html, body {
+  height: 100%;
+  font-family: 'Helvetica', sans-serif;
+}
+body {
+  margin: 0;
+  display: flex;
+  background: #383636;
+  color: white;
+}
+a { color: white; }
+a.link, a.visited, a.hover, a.active { color: white; }
+
+#wrapper {
+  margin: 0 auto;
+}
+
+#content {
+  padding-top: 5px;
+  min-width: 320px;
+}
+
+.byline {
+  color: white;
+  float: right;
+  font-size: 80%;
+}
+
+.byline a {
+  text-decoration: none;
+  border-bottom: dotted 1px black;
+}
+
+input {
+  width: 100%;
+}
+
+ul {
+  list-style: none;
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margins */
+}
+li {
+  padding: 1em;
+}
+.li-item {
+  cursor: pointer;
+}
+.li-item:hover {
+  background: white;
+  color: #383636;
+}
+li a {
+  color: inherit;
+}
+.song-score {
+  color: #4ab833;
+  float: right;
+  text-align: right;
+  font-size: 80%;
+  margin-left: 1em;
+}
+.li-title {
+  background: #383636;
+  color: white;
+}
+.instruction {
+  color: #cdcdcd;
+  font-size: 80%;
+}
+.score-score-title {
+  font-size: 80%;
+}
