@@ -487,7 +487,6 @@ function draw() {
     return;
   }
 
-  $('#instructions').css('width', '100%');
   if (source.enabled === false) {
     background(opts.backgroundColor);
     textSize(0.6*opts.fontSizeScore);

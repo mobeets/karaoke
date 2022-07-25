@@ -1,3 +1,4 @@
+/* GENERIC */
 html, body {
   height: 100%;
   font-family: 'Helvetica', sans-serif;
@@ -10,31 +11,29 @@ body {
 }
 a { color: white; }
 a.link, a.visited, a.hover, a.active { color: white; }
-
 #wrapper {
   margin: 0 auto;
 }
-
 #content {
   padding-top: 5px;
   min-width: 320px;
 }
 
+/* BYLINE */
 .byline {
   color: white;
   float: right;
   font-size: 80%;
 }
-
 .byline a {
   text-decoration: none;
   border-bottom: dotted 1px black;
 }
 
+/* MENU */
 input {
   width: 100%;
 }
-
 ul {
   list-style: none;
   padding: 0; /* Remove padding */
@@ -70,4 +69,22 @@ li a {
 }
 .score-score-title {
   font-size: 80%;
+}
+
+/* GAME */
+audio {
+  width: 100px;
+}
+#audio-controls {
+  float: left;
+  width: 110px;
+}
+#instructions {
+  width: 100%;
+  float: left;
+}
+#song-title {
+  float: left;
+  margin-top: 0.5em;
+  margin-left: 1.5em;
 }
