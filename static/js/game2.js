@@ -632,8 +632,7 @@ class PitchHistory {
   }
 }
 
-function chooseSong() {
-  let songName = $(this).data("value");
+function chooseSong(songName) {
   $('#menu').hide();
   $('#game').show();
 

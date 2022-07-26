@@ -1,5 +1,6 @@
 let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songList;
+let item;
 
 function filterSongs() {
   let query = $('#song-search').val().toLowerCase();
@@ -45,6 +46,22 @@ function renderBestScore(scoreHistory) {
   return '';
 }
 
+function itemClicked() {
+  // this lets us count two adjacent clicks on the same element as a "double-click," even if they are separated in time
+  let curItem = $(this).data("value");
+  if (item === curItem) {
+    chooseSong(curItem);
+  } else {
+    item = curItem;
+    $('.li-item').removeClass('selected');
+    $(this).addClass('selected');
+  }
+}
+
+function itemDoubleClicked() {
+  chooseSong($(this).data("value"));
+}
+
 function displaySongs(songNameData) {
   songList = songNameData;
   console.log(songNameData);
@@ -62,7 +79,8 @@ function displaySongs(songNameData) {
   }
   
   $('#song-search').on('input', filterSongs);
-  $('.li-item').click(chooseSong); // link to game2.js
+  $('.li-item').dblclick(itemDoubleClicked);
+  $('.li-item').click(itemClicked); // for slower double-click
 }
 
 function fetchSongData() {
