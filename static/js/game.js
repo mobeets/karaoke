@@ -1,5 +1,5 @@
-let dataUrl = 'https://mobeets.github.io/ksdb/';
-let songList;
+// let dataUrl = 'https://mobeets.github.io/ksdb/';
+// let songList;
 let songData;
 let curSession;
 let curSongKey;
@@ -74,10 +74,18 @@ function startAudio() {
   pointMessages = new PointMessages();
 }
 
+function updateFontSizes() {
+  // hacky but works
+  let rectHeight = (windowHeight-80)/8;
+  opts.fontSizeLyrics = 0.25*rectHeight;
+  opts.fontSizeScore = 0.25*rectHeight;
+}
+
 function setup() {
   // prepare canvas
   let cnv = createCanvas(windowWidth, windowHeight-80);
   cnv.parent("sketch-container");
+  updateFontSizes();
   frameRate(fps);
 
   queryString = window.location.search;
@@ -340,15 +348,6 @@ function drawStaffs() {
   }
 }
 
-function getScoreHistory() {
-  // load existing history
-  let history = {};
-  if (localStorage.getItem('history') !== null) {
-    history = JSON.parse(localStorage.getItem('history'));
-  }
-  return history;
-}
-
 function logScore(mostRecentScore) {
   let history = getScoreHistory();
 
@@ -405,16 +404,6 @@ function showScore(curTime) {
   let scoreYPos = height - opts.fontSizeScore;
   let scoreHeight = 0.9*(20 + opts.fontSizeScore);
 
-  // if we just got a point, highlight that
-  let fontSizeScore = opts.fontSizeScore;
-  // if ((mostRecentScore !== undefined) && (nHit > mostRecentScore.nHit) || ((frameCount - lastHighlightTime) < opts.highlightScoreDuration)) {
-  //   if (nHit > mostRecentScore.nHit) {
-  //     lastHighlightTime = frameCount;
-  //   }
-  //   fontSizeScore *= 1.5;
-  //   scoreHeight *= 1.5;
-  // }
-
   fill(opts.colorHitNote); noStroke();
   ellipse(width/2, scoreYPos-opts.fontSizeScore/3, scoreHeight, scoreHeight);
 
@@ -435,7 +424,7 @@ function showScore(curTime) {
   }
 
   // total score
-  textSize(fontSizeScore);
+  textSize(opts.fontSizeScore);
   fill('white');
   noStroke();
   textAlign(CENTER);
@@ -454,7 +443,6 @@ function showScore(curTime) {
 }
 
 function showTitle() {
-  textSize(opts.fontSizeTitle);
   let a = songData.artist;
   let b = songData.title;
   $('#song-title').html('"' + b + '" by ' + a);
@@ -475,109 +463,6 @@ function showScoreCard() {
   text('of ' + totalNotes + ' (' + pctHit.toFixed(0) + '%)', width/2, height/2 + 0.2*min(width, height));
   textSize(0.25*min(width, height));
   text(nHit.toFixed(0), width/2, height/2);
-}
-
-function findBestScore(scoreHistory) {
-  let maxNotesHit = 0;
-  let bestScore;
-  for (var i = 0; i < Object.values(scoreHistory).length; i++) {
-    let curScore = Object.values(scoreHistory)[i];
-    if ((curScore.totalNotes !== undefined) && (curScore.nHit > maxNotesHit)) {
-      maxNotesHit = curScore.nHit;
-      bestScore = curScore;
-    }
-  }
-  return bestScore;
-}
-
-function showScoreMatrix(scoreHistory, x, y, w, h) {
-  let rows = [];
-  for (var i = 0; i < Object.values(scoreHistory).length; i++) {
-    let curScore = Object.values(scoreHistory)[i];
-    if (curScore.totalNotes !== undefined) {
-      let row = [curScore.nHit, curScore.nNotes, curScore.totalNotes];
-      if ((curScore.nNotes/curScore.totalNotes > 0.05) && (curScore.nHit > 0)) {
-        rows.push(row);
-      }
-    }
-  }
-  
-  // if (rows.length < 2) { return; }
-
-  let xPad = 3;
-  let maxShown = Math.floor(w/xPad);
-  let nSkip = max(0, rows.length - maxShown);
-  // console.log([w, maxShown, rows.length, nSkip]);
-  for (var i = nSkip; i < rows.length; i++) {
-    let nHit = rows[i][0];
-    let nNotes = rows[i][1];
-    let N = rows[i][2];
-    let cx = x + (i-nSkip)*xPad;
-    let cy = y;
-    // strokeWeight(1); stroke(opts.noteColorDefault);
-    // line(cx, cy + h, cx, cy + h - (nNotes/N)*h);
-    strokeWeight(1); stroke(opts.colorHitNote);
-    line(cx, cy + h, cx, cy + h - (nHit/N)*h);
-  }
-  strokeWeight(1);
-}
-
-function showMenu() {
-  if (songList === undefined) {
-    return;
-  }
-
-  let history = getScoreHistory();
-  let noHistory = false;
-  if (Object.keys(history).length === 0) { noHistory = true; }
-  let rectHeight = (windowHeight-80)/songList.length;
-  let xText = 10;
-  if (!noHistory) {
-    $('#score-title').html('Best score');
-    $('#score-title').css('font-size', 0.2*rectHeight);
-  }
-  $('#instructions').html('Choose a song.');
-  $('#instructions').css('font-size', 0.2*rectHeight);
-
-  textSize(0.25*rectHeight);
-  // doing this here like a dummy
-  opts.fontSizeLyrics = 0.25*rectHeight;
-  opts.fontSizeScore = 0.25*rectHeight;
-  opts.fontSizeTitle = 0.25*rectHeight;
-
-  for (var i = 0; i < songList.length; i++) {
-    let curSong = songList[i];
-    let curHeight = i*rectHeight;
-    if ((mouseY >= curHeight) && (mouseY < curHeight+rectHeight)) {
-      songSelectionIndex = i;
-    }
-    if (i === songSelectionIndex) {
-      fill('white'); noStroke();
-      rect(0, curHeight, windowWidth, rectHeight);
-      fill(opts.backgroundColor); noStroke();
-    } else {
-      fill('white'); noStroke();
-    }
-    textAlign(LEFT);
-    let yOffset = noHistory ? rectHeight/2 : rectHeight/2.5;
-    text(curSong.label, xText, curHeight + yOffset);
-    if (history[curSong.value] !== undefined) {
-      let bestScore = findBestScore(history[curSong.value]);
-      if (bestScore !== undefined) {
-        let pctHit = (100*bestScore.nHit/bestScore.totalNotes).toFixed(0);
-        if (i === songSelectionIndex) {
-          fill('green');
-        } else {
-          fill(opts.colorHitNote);
-        }
-        textAlign(RIGHT);
-        text(bestScore.nHit + '/' + bestScore.totalNotes + ' (' + pctHit + '%)', windowWidth-1.5*xText, curHeight + 2*rectHeight/2.5);
-        if (width > 300) {
-          showScoreMatrix(history[curSong.value], windowWidth/3, curHeight, windowWidth/3, rectHeight-5);
-        }
-      }
-    }
-  }
 }
 
 function showCountdown(curSongTime) {
@@ -602,12 +487,14 @@ function showCountdown(curSongTime) {
 
 function draw() {
   if (songData === undefined) {
-    clear();
-    showMenu();
     return;
   }
-  $('#instructions').css('width', '100%');
-  $('#score-title').hide();
+  if (source === undefined) {
+    fill('white'); noStroke();
+    text('Click or tap to start', width/2, height/2);
+    return;
+  }
+
   if (source.enabled === false) {
     background(opts.backgroundColor);
     textSize(0.6*opts.fontSizeScore);
@@ -745,7 +632,10 @@ class PitchHistory {
   }
 }
 
-function updateSong(songName) {
+function chooseSong(songName) {
+  $('#menu').hide();
+  $('#game').show();
+
   curSession = Date.now();
   curSongKey = songName;
   let key = songName;
@@ -776,31 +666,6 @@ function updateSong(songName) {
   });
 }
 
-function fetchSongData() {
-  // $('#sketch-container').hide();
-  $.ajax({
-    url: dataUrl + "songs.json",
-    dataType: "json",
-    success: function( songNameData ) {
-      songList = songNameData;
-      console.log(songNameData);
-      // $('#songs').autocomplete({
-      //   source: songNameData,
-      //   minLength: 0,
-      //   select: function( event, ui ) {
-      //     if (ui.item) {
-      //       $('#sketch-container').show();
-      //       console.log(ui.item.label);
-      //       updateSong(ui.item.value);
-      //     }
-      //   }
-      // });
-      // $('#songs').autocomplete('search', '');
-    }
-  });
-}
-$(document).ready(fetchSongData);
-
 function isPaused() {
   return audioEl.parent().children[0].paused || audioEl.parent().children[0].currentTime === 0;
 }
@@ -809,17 +674,7 @@ function mousePressed() {
   if (source === undefined) {
     startAudio();
   }
-  if ((songData === undefined) && (songList != undefined)) {
-    let curMouseY = mouseY;
-    let rectHeight = (windowHeight-80)/songList.length;
-    for (var i = 0; i < songList.length; i++) {
-      let curHeight = i*rectHeight;
-      if ((curMouseY >= curHeight) && (curMouseY < (i+1)*rectHeight)) {
-        songSelectionIndex = i;
-        updateSong(songList[i].value);
-      }
-    }
-  } else if (songData !== undefined && audioEl !== undefined && mouseY < windowHeight-80 && hasBeenPlayed) {
+  if (songData !== undefined && audioEl !== undefined && mouseY < windowHeight-80 && hasBeenPlayed) {
     mousePressedX = mouseX;
     mousePressedTime = audioEl.time();
   }
@@ -843,16 +698,5 @@ function keyPressed() {
   }
   if (keyCode === 27) { // Esc key
     doDetectPitch = !doDetectPitch;
-  } else if ((songData === undefined) && (songList != undefined)) {
-    if (keyCode === 38) { // up arrow
-      songSelectionIndex = (songSelectionIndex-1) % songList.length;
-    } else if (keyCode === 40) { // down arrow
-      songSelectionIndex = (songSelectionIndex+1) % songList.length;
-    } else if ((keyCode === 32) || (keyCode === 13)) { // spacebar or return
-      updateSong(songList[songSelectionIndex].value);
-    }
-    if (songSelectionIndex < 0) {
-      songSelectionIndex = songList.length + songSelectionIndex;
-    }
   }
 }

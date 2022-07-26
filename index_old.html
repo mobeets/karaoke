@@ -11,29 +11,30 @@
     <script src="static/lib/p5.dom.min.js"></script>
     <script src="static/lib/p5.sound.min.js"></script>
     <script src="static/lib/jquery.min.js"></script>
+    <!-- <script src="static/lib/jquery-ui.min.js"></script> -->
 
-    <script type="text/javascript" language="javascript" src="static/js/menu.js"></script>
     <script src="static/js/pitch-detect.js"></script>
-    <script type="text/javascript" language="javascript" src="static/js/game2.js"></script>
+    <script type="text/javascript" language="javascript" src="static/js/game.js"></script>
+    <!-- <script type="text/javascript" language="javascript" src="static/js/test-mic.js"></script> -->
 
     <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
     <link rel="icon" type="image/png" href="static/favicon.ico">
-    <link rel="stylesheet" type="text/css" href="static/css/menu.css">
+    <link rel="stylesheet" href="static/lib/jquery-ui.min.css">
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
     <title>Karaoke!</title>
   </head>
   <body>
     <div id="wrapper">
       <div id="content">
-        <div id="menu">
-          <input id="song-search">
-          <ul id="items"><li class="li-title"><span class="instruction">Choose a song.</span><span class="song-score score-score-title">Top score</span></li></ul>
-        </div>
-        <div id="game">
-          <div id="instructions"></div>
-          <div id="audio-controls"></div>
-          <div id="sketch-container"></div>
-          <div id="song-title"></div>
-        </div>
+        <!-- <div id="song-selector" class="ui-widget">
+          <label for="songs"><h2>Pick a song to get started<br/></h2></label>
+          <input id="songs">
+        </div> -->
+        <div id="instructions"></div>
+        <div id="score-title"></div>
+        <div id="sketch-container"></div>
+        <div id="audio-controls"></div>
+        <div id="song-title"></div>
         <span class="byline">&#10555; <a href="https://mobeets.github.io" target="_blank">mobeets</a></span>
       </div>
     </div>

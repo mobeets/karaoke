@@ -1,0 +1,72 @@
+html, body {
+  height: 100%;
+  font-family: 'Helvetica', sans-serif;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  background: #383636;
+  color: white;
+
+  /* This centers our sketch horizontally. */
+  justify-content: center;
+
+  /* This centers our sketch vertically. */
+  /*align-items: center;*/
+  margin-top: 5px;
+}
+a { color: white; }
+a.link, a.visited, a.hover, a.active { color: white; }
+
+audio {
+  width: 100px;
+}
+#audio-controls {
+  float: left;
+  width: 110px;
+}
+#song-selector {
+  float: left;
+  margin-left: 1em;
+  text-align: center;
+}
+
+#instructions {
+  /*font-size: 80%;*/
+  width: 80%;
+  float: left;
+}
+#score-title {
+  float: left;
+  width: 18%;
+  color: #4ab833;
+  text-align: right;
+}
+
+#wrapper {
+  /*margin: 0 auto;*/
+}
+#content {
+  /*padding-top: 20px;*/
+}
+#songs {
+  text-align: center;
+  min-width: 300px;
+}
+#song-title {
+  float: left;
+  /*font-size: 80%;*/
+  margin-top: 0.5em;
+  margin-left: 1.5em;
+}
+
+.byline {
+  color: white;
+  float: right;
+  font-size: 80%;
+}
+.byline a {
+  text-decoration: none;
+  border-bottom: dotted 1px black;
+}
