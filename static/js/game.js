@@ -4,9 +4,9 @@ let songData;
 let curSession;
 let curSongKey;
 let mostRecentScore;
-let queryString;
-let urlParams;
-let isDebugMode = false;
+// let queryString;
+// let urlParams;
+// let isDebugMode = false;
 
 let mousePressedX, mousePressedTime;
 let hasBeenPlayed = false;
@@ -88,9 +88,9 @@ function setup() {
   updateFontSizes();
   frameRate(fps);
 
-  queryString = window.location.search;
-  urlParams = new URLSearchParams(queryString);
-  isDebugMode = urlParams.has('debug');
+  // queryString = window.location.search;
+  // urlParams = new URLSearchParams(queryString);
+  // isDebugMode = urlParams.has('debug');
 }
 
 function freqToHeight(curFreq) {

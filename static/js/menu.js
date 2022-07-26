@@ -1,6 +1,9 @@
 let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songList;
-let item;
+let clickedItem;
+let queryString;
+let urlParams;
+let isDebugMode = false;
 
 function filterSongs() {
   let query = $('#song-search').val().toLowerCase();
@@ -49,10 +52,10 @@ function renderBestScore(scoreHistory) {
 function itemClicked() {
   // this lets us count two adjacent clicks on the same element as a "double-click," even if they are separated in time
   let curItem = $(this).data("value");
-  if (item === curItem) {
+  if (clickedItem === curItem) {
     chooseSong(curItem);
   } else {
-    item = curItem;
+    clickedItem = curItem;
     $('.li-item').removeClass('selected');
     $(this).addClass('selected');
   }
@@ -65,17 +68,20 @@ function itemDoubleClicked() {
 function displaySongs(songNameData) {
   songList = songNameData;
   console.log(songNameData);
+  // todo: filter out songs based on debug key
 
   let history = getScoreHistory();
   let noHistory = (Object.keys(history).length === 0);
 
   for (var i = 0; i < songList.length; i++) {
-    let citem = '<li class="li-item" data-value="' + songList[i].value + '">';
-    citem += '<a class="song-name">' + songList[i].label + '</a>';
+    if (!songList[i].debug || isDebugMode) {
+      let citem = '<li class="li-item" data-value="' + songList[i].value + '">';
+      citem += '<a class="song-name">' + songList[i].label + '</a>';
 
-    let cscore = renderBestScore(history[songList[i].value]);
-    citem += '<span class="song-score">' + cscore + '</span></li>';
-    $('#items').append(citem);
+      let cscore = renderBestScore(history[songList[i].value]);
+      citem += '<span class="song-score">' + cscore + '</span></li>';
+      $('#items').append(citem);
+    }
   }
   
   $('#song-search').on('input', filterSongs);
@@ -92,6 +98,9 @@ function fetchSongData() {
 }
 
 function init() {
+  queryString = window.location.search;
+  urlParams = new URLSearchParams(queryString);
+  isDebugMode = urlParams.has('debug');
   fetchSongData();
   $('#game').hide();
 }
