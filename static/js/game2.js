@@ -74,10 +74,18 @@ function startAudio() {
   pointMessages = new PointMessages();
 }
 
+function updateFontSizes() {
+  // hacky but works
+  let rectHeight = (windowHeight-80)/8;
+  opts.fontSizeLyrics = 0.25*rectHeight;
+  opts.fontSizeScore = 0.25*rectHeight;
+}
+
 function setup() {
   // prepare canvas
   let cnv = createCanvas(windowWidth, windowHeight-80);
   cnv.parent("sketch-container");
+  updateFontSizes();
   frameRate(fps);
 
   queryString = window.location.search;
