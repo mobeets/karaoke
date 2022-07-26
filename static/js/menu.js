@@ -2,7 +2,7 @@ let dataUrl = 'https://mobeets.github.io/ksdb/';
 let songList;
 
 function filterSongs() {
-  let query = $('#song-search').val();
+  let query = $('#song-search').val().toLowerCase();
   $("#items li a").each((id, elem) => {
     if (elem.innerText.toLowerCase().indexOf(query) >= 0) {
       $(elem).parent().show();
