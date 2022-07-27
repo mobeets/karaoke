@@ -41,6 +41,7 @@ ul {
 }
 li {
   padding: 1em;
+  position: relative;
 }
 .li-item {
   cursor: pointer;
@@ -50,6 +51,7 @@ li {
   color: #383636;
 }
 .selected {
+  border-radius: 5px;
   background: white;
   color: #383636;
 }
@@ -64,19 +66,22 @@ li a {
   margin-left: 1em;
 }
 .song-play-button {
+  position: absolute;
   color: white;
-  float: right;
-  text-align: right;
-  font-size: 80%;
+  /*float: right;*/
+  text-align: center;
+  font-size: 100%;
   margin-left: 1em;
   padding-left: 1em;
   padding-right: 1em;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  padding-top: 1em;
+  padding-bottom: 1em;
   border-radius: 5px;
   background: #4ab833;
   display: none;
-
+  top: 0%;
+  left: 72.5%;
+  width: 15%;
 }
 .li-title {
   background: #383636;
