@@ -1,12 +1,12 @@
 // let dataUrl = 'https://mobeets.github.io/ksdb/';
 // let songList;
+// let queryString;
+// let urlParams;
+// let isDebugMode = false;
 let songData;
 let curSession;
 let curSongKey;
 let mostRecentScore;
-// let queryString;
-// let urlParams;
-// let isDebugMode = false;
 
 let mousePressedX, mousePressedTime;
 let hasBeenPlayed = false;
@@ -87,10 +87,6 @@ function setup() {
   cnv.parent("sketch-container");
   updateFontSizes();
   frameRate(fps);
-
-  // queryString = window.location.search;
-  // urlParams = new URLSearchParams(queryString);
-  // isDebugMode = urlParams.has('debug');
 }
 
 function freqToHeight(curFreq) {
