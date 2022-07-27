@@ -47,8 +47,10 @@ li {
   cursor: pointer;
 }
 .li-item:hover {
-  background: gray;
-  color: #383636;
+  background: #636060;
+  /*color: #636060;*/
+  /*color: #565656;*/
+  color: white;
 }
 .selected {
   border-radius: 5px;
