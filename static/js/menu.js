@@ -57,7 +57,9 @@ function itemClicked() {
   } else {
     clickedItem = curItem;
     $('.li-item').removeClass('selected');
+    $('.li-item').find('.song-play-button').hide();
     $(this).addClass('selected');
+    $(this).find('.song-play-button').show();
   }
 }
 
@@ -79,7 +81,7 @@ function displaySongs(songNameData) {
       citem += '<a class="song-name">' + songList[i].label + '</a>';
 
       let cscore = renderBestScore(history[songList[i].value]);
-      citem += '<span class="song-score">' + cscore + '</span></li>';
+      citem += '<span class="song-score">' + cscore + '</span><span class="song-play-button">Play!</span></li>';
       $('#items').append(citem);
     }
   }

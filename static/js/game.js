@@ -102,6 +102,11 @@ function loadSongNotesAndLyrics(audioEl, songData) {
 
   let ns = songData.notes;
   let songNoteTranspose = songData.note_transpose;
+  if (isDebugMode) {
+    // console.log('making manual changes in debug mode');
+    // songNoteTranspose += 60;
+    // gap += 0.1;
+  }
 
   // first need to find min/max notes for setting range
   let minNote = 100; let maxNote = 0;
