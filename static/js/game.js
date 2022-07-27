@@ -87,6 +87,7 @@ function setup() {
   cnv.parent("sketch-container");
   updateFontSizes();
   frameRate(fps);
+  $('#skip-button').click(skipButton);
 }
 
 function freqToHeight(curFreq) {
@@ -471,11 +472,9 @@ function showCountdown(curSongTime) {
   let windowSecs = opts.timePerThousandPixels * (windowWidth/1000);
   if (curSongTime + windowSecs/2 > firstNote) {
     $('#instructions').hide();
-    $('#skip-button').hide();
     return;
   }
   if (isPaused()) {
-    $('#skip-button').hide();
     $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>. Drag to change the time.');
   } else {
     $('#instructions').html('');
@@ -486,7 +485,6 @@ function showCountdown(curSongTime) {
   fill('white'); noStroke();
   textAlign(CENTER);
   text('' + (firstNote-curSongTime).toFixed(0) + '...', windowWidth/2, wordHeight);
-  $('#skip-button').show();
 }
 
 function draw() {
@@ -506,10 +504,12 @@ function draw() {
     text("Please allow mic input to play. Or try a different browser if you're still having issues.", 20, windowHeight/4, 0.9*windowWidth);
     return;
   }
+  
   background(opts.backgroundColor);
   drawStaffs();
   if (!hasBeenPlayed && !isPaused()) {
     hasBeenPlayed = true;
+    $('#skip-button').show();
   }
   let curSongTime = audioEl.time();
   if (!hasBeenPlayed && curSongTime > 0) {
@@ -668,6 +668,11 @@ function chooseSong(songName) {
       $('#song-selector').hide();
     }
   });
+}
+
+function skipButton() {
+  let gap = songData.gap/1000 - songOffsetMsecs/1000;
+  audioEl.time(gap-5);
 }
 
 function isPaused() {

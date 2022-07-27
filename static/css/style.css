@@ -110,10 +110,11 @@ audio {
   width: 50px;
   background: #262525;
   color: white;
-  padding: 0.2em;
+  padding: 0.54em;
   text-align: center;
   display: none;
   cursor: pointer;
+  font-size: 80%;
 }
 #instructions {
   width: 100%;
