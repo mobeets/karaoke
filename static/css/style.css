@@ -105,6 +105,16 @@ audio {
   float: left;
   width: 110px;
 }
+#skip-button {
+  float: left;
+  width: 50px;
+  background: #262525;
+  color: white;
+  padding: 0.2em;
+  text-align: center;
+  display: none;
+  cursor: pointer;
+}
 #instructions {
   width: 100%;
   float: left;

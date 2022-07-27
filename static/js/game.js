@@ -471,9 +471,11 @@ function showCountdown(curSongTime) {
   let windowSecs = opts.timePerThousandPixels * (windowWidth/1000);
   if (curSongTime + windowSecs/2 > firstNote) {
     $('#instructions').hide();
+    $('#skip-button').hide();
     return;
   }
   if (isPaused()) {
+    $('#skip-button').hide();
     $('#instructions').html('Press play, sing along, and score <span style="color: ' + opts.colorHitNote + '">points</span> by matching your pitch ⬤ to the current <span style="background-color: ' + opts.noteColorDefault + '">note</span>. Drag to change the time.');
   } else {
     $('#instructions').html('');
@@ -484,6 +486,7 @@ function showCountdown(curSongTime) {
   fill('white'); noStroke();
   textAlign(CENTER);
   text('' + (firstNote-curSongTime).toFixed(0) + '...', windowWidth/2, wordHeight);
+  $('#skip-button').show();
 }
 
 function draw() {
