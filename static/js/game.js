@@ -623,14 +623,16 @@ class PitchHistory {
   draw(curSongTime) {
     noFill(); stroke(this.color);
     beginShape();
-    for (var i = 0; i < this.history.length; i++) {
+    let lastTime = -1;
+    for (var i = this.history.length-1; i >= 0; i--) {
       if (this.times[i] <= 0) { continue; }
       let freqHeight = freqToHeight(this.history[i]);
       let t = this.timeToXPos(this.times[i], curSongTime);
-      if (freqHeight < 0 || freqHeight > height) {
+      if ((i > 0 && t < lastTime) || freqHeight < 0 || freqHeight > height) {
         endShape(); beginShape();
       }
       vertex(t, freqHeight);
+      lastTime = t;
     }
     endShape();
   }
