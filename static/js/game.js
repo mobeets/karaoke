@@ -472,6 +472,7 @@ function showCountdown(curSongTime) {
   let windowSecs = opts.timePerThousandPixels * (windowWidth/1000);
   if (curSongTime + windowSecs/2 > firstNote) {
     $('#instructions').hide();
+    $('#skip-button').hide();
     return;
   }
   if (isPaused()) {
@@ -508,8 +509,8 @@ function draw() {
   background(opts.backgroundColor);
   drawStaffs();
   if (!hasBeenPlayed && !isPaused()) {
-    hasBeenPlayed = true;
     $('#skip-button').show();
+    hasBeenPlayed = true;
   }
   let curSongTime = audioEl.time();
   if (!hasBeenPlayed && curSongTime > 0) {

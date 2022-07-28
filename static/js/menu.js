@@ -58,8 +58,10 @@ function itemClicked() {
     clickedItem = curItem;
     $('.li-item').removeClass('selected');
     $('.li-item').find('.song-play-button').hide();
+    $('.li-item').find('.song-score').show();
     $(this).addClass('selected');
     $(this).find('.song-play-button').show();
+    $(this).find('.song-score').hide();
   }
 }
 

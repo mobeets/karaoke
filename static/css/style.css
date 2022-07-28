@@ -54,8 +54,8 @@ li {
 }
 .selected {
   border-radius: 5px;
-  background: white;
-  color: #383636;
+  /*background: white;*/
+  color: #4ab833;
 }
 li a {
   color: inherit;
