@@ -461,8 +461,8 @@ function showScoreCard() {
   fill('white');
   textAlign(CENTER, CENTER);
   textSize(opts.fontSizeLyrics);
-  text('Final score', width/2, height/2 - 0.2*min(width, height));
-  text('of ' + totalNotes + ' (' + pctHit.toFixed(0) + '%)', width/2, height/2 + 0.2*min(width, height));
+  text('Final score', width/2, height/2 - 0.17*min(width, height));
+  text('of ' + totalNotes + ' (' + pctHit.toFixed(0) + '%)', width/2, height/2 + 0.17*min(width, height));
   textSize(0.25*min(width, height));
   text(nHit.toFixed(0), width/2, height/2);
 }
